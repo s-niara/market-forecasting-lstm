@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "market-forecasting-lstm"
+version = "0.1.0"
+description = "Reproducible stock forecasting experiments for NIT3251"
+requires-python = ">=3.11,<3.13"
+dependencies = ["numpy", "pandas", "plotly", "pandas-market-calendars==5.5.0"]
+
+[project.optional-dependencies]
+data = ["yfinance"]
+models = ["scikit-learn", "statsmodels", "tensorflow"]
+app = ["streamlit"]
+dev = ["jupyterlab", "nbconvert", "ipykernel", "pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

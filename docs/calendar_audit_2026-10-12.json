@@ -1,0 +1,73 @@
+{
+  "calendar_library_version": "5.5.0",
+  "scope": "Dates only, including test calendar; no performance inspection",
+  "benchmark_calendar_note": "NYSE regular equity sessions used as proxy for NYSE Arca ETFs; not an official exchange-certified audit",
+  "series": {
+    "NVDA": {
+      "calendar": "NASDAQ",
+      "expected_sessions": 2766,
+      "observed_sessions": 2766,
+      "duplicate_dates": 0,
+      "ordered": true,
+      "missing": [],
+      "unexpected": [],
+      "sessions_by_year": {
+        "2015": 252,
+        "2016": 252,
+        "2017": 251,
+        "2018": 251,
+        "2019": 252,
+        "2020": 253,
+        "2021": 252,
+        "2022": 251,
+        "2023": 250,
+        "2024": 252,
+        "2025": 250
+      }
+    },
+    "SPY": {
+      "calendar": "NYSE",
+      "expected_sessions": 2766,
+      "observed_sessions": 2766,
+      "duplicate_dates": 0,
+      "ordered": true,
+      "missing": [],
+      "unexpected": [],
+      "sessions_by_year": {
+        "2015": 252,
+        "2016": 252,
+        "2017": 251,
+        "2018": 251,
+        "2019": 252,
+        "2020": 253,
+        "2021": 252,
+        "2022": 251,
+        "2023": 250,
+        "2024": 252,
+        "2025": 250
+      }
+    },
+    "XLK": {
+      "calendar": "NYSE",
+      "expected_sessions": 2766,
+      "observed_sessions": 2766,
+      "duplicate_dates": 0,
+      "ordered": true,
+      "missing": [],
+      "unexpected": [],
+      "sessions_by_year": {
+        "2015": 252,
+        "2016": 252,
+        "2017": 251,
+        "2018": 251,
+        "2019": 252,
+        "2020": 253,
+        "2021": 252,
+        "2022": 251,
+        "2023": 250,
+        "2024": 252,
+        "2025": 250
+      }
+    }
+  }
+}

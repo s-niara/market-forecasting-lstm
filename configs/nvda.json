@@ -1,0 +1,17 @@
+{
+  "target_ticker": "NVDA",
+  "context_tickers": [
+    "SPY",
+    "XLK"
+  ],
+  "start": "2015-01-01",
+  "end_exclusive": "2026-01-01",
+  "train_end": "2022-12-31",
+  "validation_end": "2024-12-31",
+  "test_end": "2025-12-31",
+  "forecast_horizon_trading_days": 1,
+  "initial_sequence_length": 30,
+  "seed": 42,
+  "price_convention": "split_adjusted_close",
+  "volume_policy": "excluded_pending_independent_verification"
+}

@@ -1,0 +1,19 @@
+# Environments and Python
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.DS_Store
+.env
+# Downloaded data and generated artifacts remain local
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+artifacts/*
+!artifacts/.gitkeep
+
+*.egg-info/
+.pytest_cache/
+
+.Rhistory

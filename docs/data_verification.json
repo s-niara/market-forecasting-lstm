@@ -1,0 +1,120 @@
+{
+  "retrieved_at_utc": "2026-10-11T09:07:25.380128+00:00",
+  "series": {
+    "NVDA": {
+      "rows": 2766,
+      "first": "2015-01-02",
+      "last": "2025-12-31",
+      "duplicate_dates": 0,
+      "ordered": true,
+      "missing_nonfinite": {
+        "high": 0,
+        "close": 0,
+        "volume": 0,
+        "open": 0,
+        "low": 0,
+        "adjclose": 0
+      },
+      "invalid_ohlcv_dates": [],
+      "zero_volume_dates": [],
+      "splits": [
+        {
+          "date": "2021-07-20",
+          "ratio": "4:1",
+          "previous_close": 18.77975082397461,
+          "close": 18.61199951171875,
+          "close_return_pct": -0.8932563260727888,
+          "previous_volume": 749060000,
+          "volume": 434687000
+        },
+        {
+          "date": "2024-06-10",
+          "ratio": "10:1",
+          "previous_close": 120.88800048828125,
+          "close": 121.79000091552734,
+          "close_return_pct": 0.7461455426533758,
+          "previous_volume": 412386000,
+          "volume": 313434100
+        }
+      ],
+      "dividend_events": 44,
+      "adjusted_close_ratio_range": [
+        0.9575432480460269,
+        0.9976655292761092
+      ],
+      "sha256": "e0903f6a59e349426fe0da5262ec7ec7c78c37b7350ef29c0a1b6dd4fb1885a7"
+    },
+    "SPY": {
+      "rows": 2766,
+      "first": "2015-01-02",
+      "last": "2025-12-31",
+      "duplicate_dates": 0,
+      "ordered": true,
+      "missing_nonfinite": {
+        "low": 0,
+        "open": 0,
+        "high": 0,
+        "volume": 0,
+        "close": 0,
+        "adjclose": 0
+      },
+      "invalid_ohlcv_dates": [],
+      "zero_volume_dates": [],
+      "splits": [],
+      "dividend_events": 44,
+      "adjusted_close_ratio_range": [
+        0.8239665425245079,
+        0.9922498843180547
+      ],
+      "sha256": "1d9cb7d41005575765a48353ab04cd175376138298942050ae0d741b00033699"
+    },
+    "XLK": {
+      "rows": 2766,
+      "first": "2015-01-02",
+      "last": "2025-12-31",
+      "duplicate_dates": 0,
+      "ordered": true,
+      "missing_nonfinite": {
+        "close": 0,
+        "low": 0,
+        "volume": 0,
+        "high": 0,
+        "open": 0,
+        "adjclose": 0
+      },
+      "invalid_ohlcv_dates": [],
+      "zero_volume_dates": [],
+      "splits": [
+        {
+          "date": "2025-12-05",
+          "ratio": "2:1",
+          "previous_close": 145.53500366210938,
+          "close": 146.60000610351562,
+          "close_return_pct": 0.7317843918009492,
+          "previous_volume": 9995200,
+          "volume": 6628000
+        }
+      ],
+      "dividend_events": 44,
+      "adjusted_close_ratio_range": [
+        0.8743240321332586,
+        0.9964059676961791
+      ],
+      "sha256": "daca5933dda08edbb09e6d460508fb37dafe0f052b85a5f59ff57ce6699376f4"
+    }
+  },
+  "date_alignment": {
+    "NVDA": {
+      "missing_vs_NVDA": [],
+      "extra_vs_NVDA": []
+    },
+    "SPY": {
+      "missing_vs_NVDA": [],
+      "extra_vs_NVDA": []
+    },
+    "XLK": {
+      "missing_vs_NVDA": [],
+      "extra_vs_NVDA": []
+    }
+  }
+}

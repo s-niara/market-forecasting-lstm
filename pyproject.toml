@@ -11,7 +11,8 @@ dependencies = ["numpy", "pandas", "plotly", "pandas-market-calendars==5.5.0"]
 
 [project.optional-dependencies]
 data = ["yfinance"]
-models = ["scikit-learn", "statsmodels", "tensorflow"]
+statistical = ["statsmodels==0.15.0"]
+models = ["scikit-learn", "statsmodels==0.15.0", "tensorflow"]
 app = ["streamlit"]
 dev = ["jupyterlab", "nbconvert", "ipykernel", "pytest"]
 

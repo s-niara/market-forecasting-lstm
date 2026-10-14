@@ -1,0 +1,257 @@
+{
+  "model": "ARIMA",
+  "selected_order": [
+    2,
+    1,
+    2
+  ],
+  "selection": "lowest converged training AIC; no validation-based order selection",
+  "trend": "n",
+  "refit": false,
+  "state_update": "forecast then extend observed target",
+  "training_rows": 2014,
+  "training_start": "2015-01-02",
+  "training_end": "2022-12-30",
+  "validation_start": "2023-01-03",
+  "validation_end": "2024-12-31",
+  "target": "Yahoo split-adjusted Close, retrospective USD basis",
+  "parameters": {
+    "ar.L1": -1.7069930337085817,
+    "ar.L2": -0.8082984736131866,
+    "ma.L1": 1.6885832309417743,
+    "ma.L2": 0.7740791773946605,
+    "sigma2": 0.139428457771386
+  },
+  "candidates": [
+    {
+      "order": [
+        0,
+        1,
+        0
+      ],
+      "eligible": true,
+      "converged": true,
+      "aic": 1765.6055721876444,
+      "warnings": []
+    },
+    {
+      "order": [
+        0,
+        1,
+        1
+      ],
+      "eligible": true,
+      "converged": true,
+      "aic": 1763.3749457192748,
+      "warnings": []
+    },
+    {
+      "order": [
+        0,
+        1,
+        2
+      ],
+      "eligible": true,
+      "converged": true,
+      "aic": 1764.0955316307156,
+      "warnings": []
+    },
+    {
+      "order": [
+        1,
+        1,
+        0
+      ],
+      "eligible": true,
+      "converged": true,
+      "aic": 1763.5990554216035,
+      "warnings": []
+    },
+    {
+      "order": [
+        1,
+        1,
+        1
+      ],
+      "eligible": true,
+      "converged": true,
+      "aic": 1764.728104658644,
+      "warnings": []
+    },
+    {
+      "order": [
+        1,
+        1,
+        2
+      ],
+      "eligible": true,
+      "converged": true,
+      "aic": 1758.441065656167,
+      "warnings": [
+        "Non-invertible starting MA parameters found. Using zeros as starting parameters.",
+        "Non-stationary starting autoregressive parameters found. Using zeros as starting parameters."
+      ]
+    },
+    {
+      "order": [
+        2,
+        1,
+        0
+      ],
+      "eligible": true,
+      "converged": true,
+      "aic": 1763.968673079169,
+      "warnings": []
+    },
+    {
+      "order": [
+        2,
+        1,
+        1
+      ],
+      "eligible": true,
+      "converged": true,
+      "aic": 1758.1209683976504,
+      "warnings": []
+    },
+    {
+      "order": [
+        2,
+        1,
+        2
+      ],
+      "eligible": true,
+      "converged": true,
+      "aic": 1756.7338794706045,
+      "warnings": [
+        "Non-invertible starting MA parameters found. Using zeros as starting parameters.",
+        "Non-stationary starting autoregressive parameters found. Using zeros as starting parameters."
+      ]
+    }
+  ],
+  "forecast_warnings": [],
+  "validation_metrics": {
+    "arima": {
+      "n": 502,
+      "mae_usd": 1.72020057294978,
+      "rmse_usd": 2.612846479808627
+    },
+    "naive": {
+      "n": 502,
+      "mae_usd": 1.6894941139981092,
+      "rmse_usd": 2.58932381153116
+    }
+  },
+  "mae_improvement_pct": -1.8174942840733177,
+  "test_evaluated": false,
+  "created_at_utc": "2026-10-13T09:23:17.489222+00:00",
+  "config": {
+    "target_ticker": "NVDA",
+    "context_tickers": [
+      "SPY",
+      "XLK"
+    ],
+    "start": "2015-01-01",
+    "end_exclusive": "2026-01-01",
+    "train_end": "2022-12-31",
+    "validation_end": "2024-12-31",
+    "test_end": "2025-12-31",
+    "forecast_horizon_trading_days": 1,
+    "initial_sequence_length": 30,
+    "seed": 42,
+    "price_convention": "split_adjusted_close",
+    "volume_policy": "excluded_pending_independent_verification"
+  },
+  "arima_settings": {
+    "orders": [
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        1,
+        1
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        1,
+        1,
+        0
+      ],
+      [
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        2
+      ],
+      [
+        2,
+        1,
+        0
+      ],
+      [
+        2,
+        1,
+        1
+      ],
+      [
+        2,
+        1,
+        2
+      ]
+    ],
+    "trend": "n",
+    "selection": "training_aic",
+    "refit": false,
+    "maxiter": 500,
+    "calendar": "NASDAQ"
+  },
+  "calendar_audit": {
+    "calendar": "NASDAQ",
+    "expected_sessions": 2516,
+    "observed_sessions": 2516,
+    "duplicate_dates": 0,
+    "ordered": true,
+    "missing": [],
+    "unexpected": [],
+    "sessions_by_year": {
+      "2015": 252,
+      "2016": 252,
+      "2017": 251,
+      "2018": 251,
+      "2019": 252,
+      "2020": 253,
+      "2021": 252,
+      "2022": 251,
+      "2023": 250,
+      "2024": 252
+    }
+  },
+  "snapshot_sha256": "e0903f6a59e349426fe0da5262ec7ec7c78c37b7350ef29c0a1b6dd4fb1885a7",
+  "config_sha256": "3561ca64f38a7dc7e761fb9f9bd40e4b9483e6a9098ef88887451132eb548b82",
+  "arima_config_sha256": "179deda301ff3c02719501649245ffd9a04732b6ae319c412bb8ee7a647e8238",
+  "source_sha256": {
+    "scripts/run_arima_benchmark.py": "568f04ab2e8ea050307b0c35a3a31922d95a715da74b5cf33c60488acd61b190",
+    "src/market_forecasting/arima.py": "2ac36a287049db2cd6669e16725eed2e1a3a2094c27aef1debe2831b4531bb24",
+    "src/market_forecasting/dataset.py": "15bd4e4ad4367e94fcc077ea8faad5e94d9ae737f5c00753bd62f90a10e45566",
+    "src/market_forecasting/calendar.py": "70125deb7c2eafda2eae836508a580b34e05d6380162abaa78f0d57526e8d1dc"
+  },
+  "environment": {
+    "python": "3.12.14 (main, Aug 25 2026, 13:50:33) [Clang 22.1.3 ]",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "statsmodels": "0.15.0",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "scipy": "1.18.1"
+  }
+}

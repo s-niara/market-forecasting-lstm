@@ -26,7 +26,7 @@ The current builder truncates to the end of validation before numerical validati
 ## Windows, transformations and evaluation
 The current development dataset contains unscaled, 30-session, single-feature Close windows. Thirty sessions is an initial setting, not a validated optimum. Scaling is unnecessary for the naive baseline; transformations required by later models must be fitted on training observations only.
 
-The naive protocol is rolling one-step forecasting: use the preceding session's observed Close for each target. Earlier validation observations may enter later forecast inputs as they become available. This does not constitute parameter fitting on validation data or a single long-horizon forecast. See [the technical summary](MILESTONE_2.md) for executed results.
+The naive protocol is rolling one-step forecasting: use the preceding session's observed Close for each target. Earlier validation observations may enter later forecast inputs as they become available. This does not constitute parameter fitting on validation data or a single long-horizon forecast. See [Milestone 3](MILESTONE_3.md) for dataset construction and [Milestone 4](MILESTONE_4.md) for executed forecast results.
 
 ## Unresolved volume and portability constraints
 Keep vendor volumes unchanged and exclude volume features pending independent corroboration of adjustment semantics. Split-date continuity alone does not establish the provider's volume methodology. No verified original-tape comparison is available. Daily Close multiplied by volume must not be represented as exact traded dollar turnover.
@@ -40,3 +40,8 @@ Other technical-feature definitions remain outstanding. SPY and XLK contain NVDA
 - [Calendar-library scheduling documentation](https://pandas-market-calendars.readthedocs.io/en/latest/usage.html)
 
 Another vendor's adjustment description was insufficient to certify Yahoo volume semantics. No verification claim is based on it.
+
+## Residual LSTM transformations
+The network predicts a standardised dollar correction, defined as next-session Close minus forecast-origin Close. Inverse-transform the correction and add the unscaled origin Close for USD evaluation. A zero-dollar correction reproduces the naive forecast; zero standardised output instead represents the fitted mean correction.
+
+Input standardisation uses unique observations occurring in fitting windows; correction standardisation uses fitting labels. Both use population standard deviation, with scale one for a constant series. No clipping or future-value imputation is performed. Selection fits 1,733 targets through 2021-12-31 and scores 251 targets in 2022. The input scaler uses 1,762 unique observations through 2021-12-30. After selection, fresh scalers and weights use 1,984 targets through 2022-12-30, with 2,013 input observations through 2022-12-29. External evaluation covers the original 502 dates. Scalers remain fixed during each evaluation phase. See [the design](MILESTONE_5_DESIGN.md) and [recorded statistics](lstm_results_v1.json).

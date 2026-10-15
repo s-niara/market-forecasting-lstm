@@ -5,10 +5,10 @@ An individual NIT3251 Advanced Data Science research project investigating next-
 ## Research objectives
 Compare a last-observed-price baseline and a traditional statistical model with LSTMs using stock history, technical features and market context. Evaluate whether additional inputs improve validation performance under a consistent forecast-origin protocol, followed by a reserved final test.
 
-The target is Yahoo split-adjusted Close in USD. Volume features remain deferred pending verification of adjustment semantics. Feature definitions and model tuning are proposed work, not completed experiments. See [data conventions](docs/DATA_CONVENTIONS.md).
+The target is Yahoo split-adjusted Close in USD. Volume features remain deferred pending verification of adjustment semantics. Price-only LSTM tuning is complete; technical-feature experiments remain proposed work. See [data conventions](docs/DATA_CONVENTIONS.md).
 
 ## Current implementation
-Frozen data, calendar auditing, price-only development windows and the naive validation baseline are implemented. No learned forecasting model has been trained and no 2025 forecast performance has been evaluated. See [implementation and verification status](docs/PROGRESS.md), the [roadmap](docs/PLAN.md) and the [first benchmark summary](docs/MILESTONE_2.md).
+Frozen data, calendar auditing, price-only development windows and the naive validation baseline are implemented. ARIMA and the residual price-only LSTM are implemented. Fifteen LSTM fits selected configuration C; its mean validation MAE is 1.705023 USD, compared with 1.689494 USD for the naive benchmark. No 2025 forecast performance has been evaluated. See the [LSTM results](docs/MILESTONE_5.md). See [implementation and verification status](docs/PROGRESS.md), the [roadmap](docs/PLAN.md) and the [benchmark summary](docs/MILESTONE_4.md).
 
 ## Installation
 Python 3.12 is the verified environment; package metadata permits Python 3.11–3.12, but that does not establish verification on both versions. Run from the repository root:
@@ -16,12 +16,12 @@ Python 3.12 is the verified environment; package metadata permits Python 3.11–
 ```sh
 python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements-milestone2-lock.txt
+python -m pip install -r requirements-lstm-lock.txt
 python -m pip install -e .
 python -m pip check
 ```
 
-The milestone lockfile records the current verified development dependencies. `requirements-foundation-lock.txt` preserves the earlier foundation environment. TensorFlow, statistical modelling and dashboard dependencies will be verified at their implementation stages; installation of the current environment does not imply those stages are complete.
+The milestone lockfile records the current verified development dependencies. `requirements-foundation-lock.txt` preserves the earlier foundation environment. The current environment includes statsmodels 0.15.0, TensorFlow 2.21.0 and Keras 3.15.1. Dashboard dependencies remain deferred. Earlier milestone lockfiles are preserved.
 
 ## Data prerequisites and reproducibility
 Exact reproduction requires the original local Yahoo JSON snapshots under `data/raw/`. These files are excluded from Git. [The acquisition record](docs/data_verification.json) contains retrieval metadata and checksums for NVDA, SPY and XLK: 2,766 observations each, retrieved on 11 October 2026 for 2015–2025.
@@ -38,7 +38,7 @@ jupyter lab
 
 Run [notebook 01](notebooks/01_data_understanding.ipynb) for training-period exploration and [notebook 02](notebooks/02_dataset_and_naive_baseline.ipynb) for development windows and validation metrics. Keep executed copies in the ignored `artifacts/` directory. Generated notebook outputs are excluded from version control.
 
-The calendar and baseline scripts write fixed, version-labelled destinations and refuse to overwrite them. Notebook 02 recomputes baseline results in memory. See the [benchmark reproduction notes](docs/MILESTONE_2.md) before running artifact-producing scripts.
+The calendar and baseline scripts write fixed, version-labelled destinations and refuse to overwrite them. Notebook 02 recomputes baseline results in memory. See the [benchmark reproduction notes](docs/MILESTONE_4.md) before running artifact-producing scripts.
 
 ## Repository structure
 | Path | Responsibility |
@@ -57,5 +57,18 @@ The calendar and baseline scripts write fixed, version-labelled destinations and
 - [Progress and verification](docs/PROGRESS.md)
 - [Research and engineering decisions](docs/DECISIONS.md)
 - [Data conventions and limitations](docs/DATA_CONVENTIONS.md)
+- [Milestone 2: environment and audit](docs/MILESTONE_2.md)
+- [Milestone 3: dataset construction](docs/MILESTONE_3.md)
+- [Milestone 4: forecasting benchmarks](docs/MILESTONE_4.md)
+- [Milestone 5: residual LSTM experiments and reproduction](docs/MILESTONE_5.md)
+- [Notebook 04: saved LSTM experiment analysis](notebooks/04_lstm_experiments.ipynb)
 
 A Streamlit/Plotly demonstration, final report and assessment defence are planned after the forecasting experiments. The demonstration will present saved results; live trading and profitability claims are outside scope.
+
+## Statistical benchmark and feature experiments
+See [Milestone 4](docs/MILESTONE_4.md) for the ARIMA protocol, executed comparison and reproduction command. [Notebook 03](notebooks/03_arima_benchmark.ipynb) displays saved forecasts. Technical feature engineering remains central: SMA, EMA, RSI and MACD candidates and three controlled LSTM variants are documented in the [proposal](docs/FEATURE_EXPERIMENT_PROPOSAL.md), pending approval before implementation.
+
+## Code documentation standard
+Python modules and functions generally use one-sentence docstrings; a second sentence is added only when needed to clarify a non-obvious contract. Repetitive Parameters, Returns, Raises and Notes sections are avoided. Concise comments beside the implementation explain methodological safeguards, important shapes, transformations and non-obvious calculations. Comments explain why an operation is needed without narrating obvious statements or claiming unimplemented capabilities.
+
+This standard applies to subsequent milestones, including scaling, model construction, optimiser settings, seed handling, checkpoint restoration, inverse transformation and evaluation. Reusable logic remains in Python modules; notebooks demonstrate and interpret experiments. Documentation changes are verified without unrelated refactoring. See the [Milestone 5 design](docs/MILESTONE_5_DESIGN.md) for the bounded LSTM protocol.

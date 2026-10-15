@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "formulation": "residual_dollar_correction",
+  "lookback": 30,
+  "max_epochs": 80,
+  "patience": 10,
+  "min_delta": 0,
+  "batch_order": "chronological",
+  "internal_fit_end": "2021-12-31",
+  "seeds": [
+    42,
+    123,
+    2026
+  ],
+  "selection": "mean_MAE_1pct_band_then_units_std_mean_id",
+  "configurations": [
+    {
+      "id": "A",
+      "units": 16,
+      "dropout": 0.0,
+      "batch_size": 32,
+      "learning_rate": 0.001
+    },
+    {
+      "id": "B",
+      "units": 32,
+      "dropout": 0.0,
+      "batch_size": 32,
+      "learning_rate": 0.001
+    },
+    {
+      "id": "C",
+      "units": 16,
+      "dropout": 0.2,
+      "batch_size": 32,
+      "learning_rate": 0.001
+    },
+    {
+      "id": "D",
+      "units": 16,
+      "dropout": 0.0,
+      "batch_size": 32,
+      "learning_rate": 0.0003
+    }
+  ]
+}

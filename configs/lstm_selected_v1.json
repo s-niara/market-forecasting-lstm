@@ -1,0 +1,107 @@
+{
+  "selected_id": "C",
+  "epochs": 19,
+  "mae_band_upper": 0.610049680530186,
+  "groups": [
+    {
+      "configuration_id": "A",
+      "eligible": true,
+      "units": 16,
+      "mean_mae": 0.6045462447659805,
+      "std_mae": 0.0006902571806951655,
+      "mean_rmse": 0.7718492524481163,
+      "std_rmse": 0.0014757019125065912
+    },
+    {
+      "configuration_id": "B",
+      "eligible": true,
+      "units": 32,
+      "mean_mae": 0.6045790490166909,
+      "std_mae": 0.0007082156277210394,
+      "mean_rmse": 0.7708253513412684,
+      "std_rmse": 0.001154322803818854
+    },
+    {
+      "configuration_id": "C",
+      "eligible": true,
+      "units": 16,
+      "mean_mae": 0.6044670181595851,
+      "std_mae": 0.00010077716584864893,
+      "mean_rmse": 0.7712857717194778,
+      "std_rmse": 0.0004076506771161131
+    },
+    {
+      "configuration_id": "D",
+      "eligible": true,
+      "units": 16,
+      "mean_mae": 0.6040095846833525,
+      "std_mae": 0.0010263583931827234,
+      "mean_rmse": 0.7706537067086758,
+      "std_rmse": 0.002078627000789328
+    }
+  ],
+  "configuration": {
+    "id": "C",
+    "units": 16,
+    "dropout": 0.2,
+    "batch_size": 32,
+    "learning_rate": 0.001
+  },
+  "search_sha256": "a9d9340bd5747001fc88b3eb17cb00e5a1c2f75cc792190824cdb39c1e4c9ef6",
+  "seeds": [
+    42,
+    123,
+    2026
+  ],
+  "formulation": "standardised_dollar_correction_plus_origin_close",
+  "lookback": 30,
+  "optimizer": "Adam",
+  "loss": "standardised_correction_mse",
+  "scaling": "training_only_standardisation",
+  "protocol": {
+    "version": 1,
+    "formulation": "residual_dollar_correction",
+    "lookback": 30,
+    "max_epochs": 80,
+    "patience": 10,
+    "min_delta": 0,
+    "batch_order": "chronological",
+    "internal_fit_end": "2021-12-31",
+    "seeds": [
+      42,
+      123,
+      2026
+    ],
+    "selection": "mean_MAE_1pct_band_then_units_std_mean_id",
+    "configurations": [
+      {
+        "id": "A",
+        "units": 16,
+        "dropout": 0.0,
+        "batch_size": 32,
+        "learning_rate": 0.001
+      },
+      {
+        "id": "B",
+        "units": 32,
+        "dropout": 0.0,
+        "batch_size": 32,
+        "learning_rate": 0.001
+      },
+      {
+        "id": "C",
+        "units": 16,
+        "dropout": 0.2,
+        "batch_size": 32,
+        "learning_rate": 0.001
+      },
+      {
+        "id": "D",
+        "units": 16,
+        "dropout": 0.0,
+        "batch_size": 32,
+        "learning_rate": 0.0003
+      }
+    ]
+  }
+}

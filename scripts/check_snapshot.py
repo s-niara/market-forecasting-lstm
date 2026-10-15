@@ -1,14 +1,17 @@
-"""Verify locally stored Yahoo snapshots against recorded SHA-256 checksums."""
+"""Verify frozen snapshot identity before reproducing an experiment."""
 import hashlib
 import json
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
+
+# Identity checks do not independently validate the vendor adjustment methodology.
 audit = json.loads((root / "docs/data_verification.json").read_text())
 for ticker, info in audit["series"].items():
     path = root / "data/raw" / f"{ticker}_yahoo_snapshot.json"
     if not path.exists():
         raise SystemExit(f"Missing local snapshot: {path.name}; raw vendor data is not tracked in Git.")
+    # Hash raw bytes, not a reserialised object, to detect any snapshot change.
     actual = hashlib.sha256(path.read_bytes()).hexdigest()
     if actual != info["sha256"]:
         raise SystemExit(f"Checksum mismatch: {ticker}")

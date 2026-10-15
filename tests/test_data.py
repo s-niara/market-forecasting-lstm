@@ -1,3 +1,4 @@
+"""Synthetic snapshot tests for integrity, exchange dates and training isolation."""
 import json
 from pathlib import Path
 import pandas as pd
@@ -6,6 +7,7 @@ from market_forecasting.data import validate_prices, load_yahoo_snapshot, load_t
 
 
 def payload():
+    """Return a two-session Yahoo-shaped fixture with distinct Close fields."""
     return {"chart": {"error": None, "result": [{
         "meta": {"exchangeTimezoneName": "America/New_York"},
         "timestamp": [1672689600, 1672776000],
@@ -15,10 +17,12 @@ def payload():
 
 
 def write_sample(tmp_path):
+    """Write the synthetic snapshot inside pytest's temporary directory; return its path."""
     p=tmp_path/'sample.json'; p.write_text(json.dumps(payload())); return p
 
 
 def test_exchange_date_and_separate_adjusted_close(tmp_path):
+    """Check exchange-local dates and preservation of distinct price conventions."""
     frame=load_yahoo_snapshot(write_sample(tmp_path))
     assert frame.index[0] == pd.Timestamp('2023-01-02')
     assert frame['close'].iloc[0] == 11
@@ -27,6 +31,7 @@ def test_exchange_date_and_separate_adjusted_close(tmp_path):
 
 @pytest.mark.parametrize('fault', ['duplicate', 'missing', 'range', 'volume'])
 def test_invalid_records_rejected(tmp_path, fault):
+    """Ensure duplicates, nonfinite data and invalid financial ranges are rejected."""
     frame=load_yahoo_snapshot(write_sample(tmp_path))
     if fault=='duplicate': frame.index=[frame.index[0]]*2; frame.index=pd.DatetimeIndex(frame.index)
     if fault=='missing': frame.iloc[0, frame.columns.get_loc('close')]=float('nan')
@@ -36,6 +41,7 @@ def test_invalid_records_rejected(tmp_path, fault):
 
 
 def test_training_panel_excludes_future_and_rejects_alignment(tmp_path):
+    """Verify training slicing and rejection of misaligned instrument calendars."""
     raw=tmp_path/'data/raw'; raw.mkdir(parents=True)
     for symbol in ['NVDA','SPY']:
         (raw/f'{symbol}_yahoo_snapshot.json').write_text(json.dumps(payload()))

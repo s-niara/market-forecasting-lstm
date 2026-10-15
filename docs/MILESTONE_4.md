@@ -40,4 +40,4 @@ At completion of the ARIMA implementation, 17 automated tests passed. ARIMA-spec
 - [Statsmodels ARIMA](https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima.model.ARIMA.html)
 - [Statsmodels state extension](https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima.model.ARIMAResults.extend.html)
 
-The next modelling stage is the stock-only LSTM design. Indicator implementation awaits approval of the [Milestone 6 proposal](FEATURE_EXPERIMENT_PROPOSAL.md).
+The stock-only residual LSTM is now evaluated in [Milestone 5](MILESTONE_5.md). Indicator implementation awaits approval of the [Milestone 6 proposal](FEATURE_EXPERIMENT_PROPOSAL.md).

@@ -1,3 +1,4 @@
+"""Acquire the original daily Yahoo snapshots and record administrative data checks."""
 import urllib.request, json, datetime, hashlib, math
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -6,6 +7,8 @@ out=root/'data/raw'
 out.mkdir(parents=True,exist_ok=True)
 if any(out.glob('*_yahoo_snapshot.json')):
  raise SystemExit('Frozen snapshots already exist. Use a new versioned data directory for a refresh.')
+
+# Acquisition bounds use an exclusive end date; stored bytes support later hashes.
 start=int(datetime.datetime(2015,1,1,tzinfo=datetime.timezone.utc).timestamp())
 end=int(datetime.datetime(2026,1,1,tzinfo=datetime.timezone.utc).timestamp())
 report={'retrieved_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'series':{}}
@@ -18,12 +21,15 @@ for symbol in ['NVDA','SPY','XLK']:
  (out/f'{symbol}_yahoo_snapshot.json').write_bytes(raw)
  dates=[datetime.datetime.fromtimestamp(t,ZoneInfo('America/New_York')).date().isoformat() for t in data['timestamp']]
  q=data['indicators']['quote'][0]; adj=data['indicators']['adjclose'][0]['adjclose']
+ # Audit numeric fields and financial range constraints without altering prices.
  fields={**q,'adjclose':adj}
  missing={k:sum(v is None or not math.isfinite(v) for v in vals) for k,vals in fields.items()}
  bad=[]
  for i,d in enumerate(dates):
   o,h,l,c,v=(q[k][i] for k in ['open','high','low','close','volume'])
   if None not in [o,h,l,c,v] and (min(o,h,l,c)<=0 or v<0 or l>min(o,c) or h<max(o,c) or l>h):bad.append(d)
+ # Record observations around splits as adjustment evidence, not a trading return.
+ # This does not independently verify the vendor volume convention.
  splits=[]
  for event in data.get('events',{}).get('splits',{}).values():
   day=datetime.datetime.fromtimestamp(event['date'],ZoneInfo('America/New_York')).date().isoformat()
@@ -31,6 +37,9 @@ for symbol in ['NVDA','SPY','XLK']:
   splits.append({'date':day,'ratio':event['splitRatio'],'previous_close':q['close'][i-1],'close':q['close'][i],'close_return_pct':100*(q['close'][i]/q['close'][i-1]-1),'previous_volume':q['volume'][i-1],'volume':q['volume'][i]})
  report['series'][symbol]={'rows':len(dates),'first':dates[0],'last':dates[-1],'duplicate_dates':len(dates)-len(set(dates)),'ordered':dates==sorted(dates),'missing_nonfinite':missing,'invalid_ohlcv_dates':bad,'zero_volume_dates':[d for d,v in zip(dates,q['volume']) if v==0],'splits':splits,'dividend_events':len(data.get('events',{}).get('dividends',{})),'adjusted_close_ratio_range':[min(a/c for a,c in zip(adj,q['close'])),max(a/c for a,c in zip(adj,q['close']))],'sha256':hashlib.sha256(raw).hexdigest()}
  datesets[symbol]=set(dates)
+# Cross-instrument agreement is separate from an independent exchange-calendar audit.
 report['date_alignment']={s:{'missing_vs_NVDA':sorted(datesets['NVDA']-d),'extra_vs_NVDA':sorted(d-datesets['NVDA'])} for s,d in datesets.items()}
+# This fixed audit path is overwritten if acquisition reaches this point.
+# A data refresh needs separately versioned destinations to preserve prior evidence.
 (root/'docs/data_verification.json').write_text(json.dumps(report,indent=2))
 print(json.dumps(report,indent=2))

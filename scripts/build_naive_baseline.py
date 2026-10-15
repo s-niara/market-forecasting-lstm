@@ -1,4 +1,4 @@
-"""Build development-only examples and score the naive model on validation."""
+"""Build unscaled development windows and persist the naive validation benchmark."""
 import hashlib,json
 from pathlib import Path
 import numpy as np
@@ -14,7 +14,11 @@ dates=pd.to_datetime(payload['timestamp'],unit='s',utc=True).tz_convert('America
 close=pd.Series(payload['indicators']['quote'][0]['close'],index=dates)
 data=build_development_dataset(close,config)
 predictions=naive_predictions(data)
+
+# Select by target partition, not by where the input window begins.
 mask=data.metadata['split'].eq('validation').to_numpy()
+
+# Persist a distinct run; keep generated arrays and vendor-derived predictions local.
 output=root/'artifacts/naive_v1'
 output.mkdir(exist_ok=False)
 np.savez_compressed(output/'development_windows.npz',X=data.X,y=data.y)
@@ -22,6 +26,8 @@ data.metadata.to_json(output/'window_metadata.json',orient='records',date_format
 table=data.metadata.loc[mask].copy()
 table['actual_close']=data.y[mask];table['prediction']=predictions[mask]
 table.to_json(output/'validation_predictions.json',orient='records',date_format='iso')
+
+# Report errors in the unchanged price scale and identify the exact source inputs.
 result={"model":"previous_session_close", "target":"Yahoo split-adjusted Close, retrospective USD basis",
         "input_shape":list(data.X.shape),"train_examples":int((~mask).sum()),"validation_examples":int(mask.sum()),
         "first_target":str(data.metadata.target_date.iloc[0].date()),

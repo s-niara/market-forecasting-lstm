@@ -23,6 +23,11 @@ The horizon is the next trading session, with the forecast formed after the orig
 
 The current builder truncates to the end of validation before numerical validation and window construction. No 2025 forecast targets or performance metrics are produced. Administrative quality checks have covered the full raw snapshot; the calendar audit inspects dates only. These checks must not be described as model evaluation.
 
+## Bounded exploratory access
+Notebook 01 uses `load_training_panel()`, which passes explicit inclusive start/end dates to the reusable Yahoo loader. Only permitted OHLCV and Adjusted Close values are decoded and validated. The reader examines timestamps through the first later session to locate the boundary; excluded quote values and current-price metadata are not deserialised. It supports the frozen chronological scalar-array schema and rejects ambiguous required fields. It does not certify ordering or completeness in an unread future tail.
+
+Opaque snapshot checksums establish identity, separately from numerical validation. `price_quality()` supplies the diagnostic counts used by `validate_prices()`; an independent calendar audit remains required because matching instrument indexes can share the same missing session. The unbounded snapshot API is available for administrative use; Notebook 01 always uses explicit bounds.
+
 ## Windows, transformations and evaluation
 The current development dataset contains unscaled, 30-session, single-feature Close windows. Thirty sessions is an initial setting, not a validated optimum. Scaling is unnecessary for the naive baseline; transformations required by later models must be fitted on training observations only.
 
@@ -31,7 +36,7 @@ The naive protocol is rolling one-step forecasting: use the preceding session's 
 ## Unresolved volume and portability constraints
 Keep vendor volumes unchanged and exclude volume features pending independent corroboration of adjustment semantics. Split-date continuity alone does not establish the provider's volume methodology. No verified original-tape comparison is available. Daily Close multiplied by volume must not be represented as exact traded dollar turnover.
 
-Other technical-feature definitions remain outstanding. SPY and XLK contain NVDA and represent correlated context, not independent information. Short histories, exchange calendars and currencies require explicit treatment before claiming general portability.
+The approved SMA, EMA, RSI, MACD and context-return definitions are implemented in Milestone 6. SPY and XLK contain NVDA and represent correlated context, not independent information. Short histories, exchange calendars and currencies require explicit treatment before claiming general portability.
 
 ## Reference provenance
 - [NVIDIA 2021 split announcement](https://nvidianews.nvidia.com/news/nvidia-announces-four-for-one-stock-split-pending-stockholder-approval-at-annual-meeting-set-for-june-3)
@@ -45,3 +50,6 @@ Another vendor's adjustment description was insufficient to certify Yahoo volume
 The network predicts a standardised dollar correction, defined as next-session Close minus forecast-origin Close. Inverse-transform the correction and add the unscaled origin Close for USD evaluation. A zero-dollar correction reproduces the naive forecast; zero standardised output instead represents the fitted mean correction.
 
 Input standardisation uses unique observations occurring in fitting windows; correction standardisation uses fitting labels. Both use population standard deviation, with scale one for a constant series. No clipping or future-value imputation is performed. Selection fits 1,733 targets through 2021-12-31 and scores 251 targets in 2022. The input scaler uses 1,762 unique observations through 2021-12-30. After selection, fresh scalers and weights use 1,984 targets through 2022-12-30, with 2,013 input observations through 2022-12-29. External evaluation covers the original 502 dates. Scalers remain fixed during each evaluation phase. See [the design](MILESTONE_5_DESIGN.md) and [recorded statistics](lstm_results_v1.json).
+
+## Milestone 6 common feature eligibility
+The [approved indicator definitions](FEATURE_EXPERIMENT_PROPOSAL.md) are implemented with arithmetic EMA seeds and Wilder RSI. The first 49 rows remain missing; no backfill is used. All variants share the complete interval beginning 2015-03-16 and 30-session windows, yielding 1,935 fitting targets from 2015-04-28 and the original 502 validation dates. Fit each feature scaler on unique fitting input rows through 2022-12-29 and the common correction scaler on fitting labels through 2022-12-30. Continue feature states across boundaries without reinitialising them. Reject internal gaps and mismatched instrument sessions. No test-period features are computed. [Milestone 6](MILESTONE_6.md) records exact statistics and results.

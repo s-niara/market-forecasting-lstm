@@ -5,10 +5,10 @@ An individual NIT3251 Advanced Data Science research project investigating next-
 ## Research objectives
 Compare a last-observed-price baseline and a traditional statistical model with LSTMs using stock history, technical features and market context. Evaluate whether additional inputs improve validation performance under a consistent forecast-origin protocol, followed by a reserved final test.
 
-The target is Yahoo split-adjusted Close in USD. Volume features remain deferred pending verification of adjustment semantics. Price-only LSTM tuning is complete; technical-feature experiments remain proposed work. See [data conventions](docs/DATA_CONVENTIONS.md).
+The target is Yahoo split-adjusted Close in USD. Volume features remain deferred pending verification of adjustment semantics. Price-only LSTM tuning and the nine-run controlled feature comparison are complete. See [data conventions](docs/DATA_CONVENTIONS.md).
 
 ## Current implementation
-Frozen data, calendar auditing, price-only development windows and the naive validation baseline are implemented. ARIMA and the residual price-only LSTM are implemented. Fifteen LSTM fits selected configuration C; its mean validation MAE is 1.705023 USD, compared with 1.689494 USD for the naive benchmark. No 2025 forecast performance has been evaluated. See the [LSTM results](docs/MILESTONE_5.md). See [implementation and verification status](docs/PROGRESS.md), the [roadmap](docs/PLAN.md) and the [benchmark summary](docs/MILESTONE_4.md).
+Frozen data, calendar auditing, price-only development windows and the naive validation baseline are implemented. ARIMA and the residual price-only LSTM are implemented. Fifteen LSTM fits selected configuration C; its mean validation MAE is 1.705023 USD, compared with 1.689494 USD for the naive benchmark. The subsequent common-warm-up feature comparison found no average improvement over price-only LSTM or naive; see [Milestone 6](docs/MILESTONE_6.md). No 2025 forecast performance has been evaluated. See the [LSTM results](docs/MILESTONE_5.md). See [implementation and verification status](docs/PROGRESS.md), the [roadmap](docs/PLAN.md) and the [benchmark summary](docs/MILESTONE_4.md).
 
 ## Installation
 Python 3.12 is the verified environment; package metadata permits Python 3.11–3.12, but that does not establish verification on both versions. Run from the repository root:
@@ -36,9 +36,11 @@ python -m pytest -q
 jupyter lab
 ```
 
-Run [notebook 01](notebooks/01_data_understanding.ipynb) for training-period exploration and [notebook 02](notebooks/02_dataset_and_naive_baseline.ipynb) for development windows and validation metrics. Keep executed copies in the ignored `artifacts/` directory. Generated notebook outputs are excluded from version control.
+Notebooks are the primary research narrative and demonstration interface; reusable Python modules implement data processing, features, models and evaluation. Each notebook calls the actual implementation, examines its behaviour and uses evidence to assess whether changes are warranted. Keep one authoritative notebook per stage; do not duplicate production algorithms or generate separate executed notebook copies.
 
-The calendar and baseline scripts write fixed, version-labelled destinations and refuse to overwrite them. Notebook 02 recomputes baseline results in memory. See the [benchmark reproduction notes](docs/MILESTONE_4.md) before running artifact-producing scripts.
+Run [notebook 01](notebooks/01_data_understanding.ipynb) for training-period EDA and data-quality assessment. Its outputs remain inline in that notebook, and its loader decodes only training-period price values. [Notebook 02](notebooks/02_dataset_and_naive_baseline.ipynb) covers development windows and validation metrics. Existing historical experiment artifacts remain preserved.
+
+The calendar script displays a training-only, timestamp-only audit without writing a report. The preserved historical calendar record remains unchanged. Baseline scripts write fixed, version-labelled destinations and refuse to overwrite them. Notebook 02 recomputes baseline results in memory. See the [benchmark reproduction notes](docs/MILESTONE_4.md) before running artifact-producing scripts.
 
 ## Repository structure
 | Path | Responsibility |
@@ -46,7 +48,7 @@ The calendar and baseline scripts write fixed, version-labelled destinations and
 | `configs/` | Forecast configuration and temporal boundaries |
 | `src/market_forecasting/` | Reusable loading, validation, calendar and dataset logic |
 | `scripts/` | Acquisition, integrity checks and experiment artifact generation |
-| `notebooks/` | Explanatory analyses and technical demonstrations |
+| `notebooks/` | Primary research narrative, implementation demonstrations and critical analysis |
 | `tests/` | Automated data-integrity, alignment and evaluation checks |
 | `docs/` | Roadmap, progress, decisions, conventions and technical evidence |
 | `data/` | Local vendor data, excluded from Git |
@@ -61,12 +63,14 @@ The calendar and baseline scripts write fixed, version-labelled destinations and
 - [Milestone 3: dataset construction](docs/MILESTONE_3.md)
 - [Milestone 4: forecasting benchmarks](docs/MILESTONE_4.md)
 - [Milestone 5: residual LSTM experiments and reproduction](docs/MILESTONE_5.md)
+- [Milestone 6: controlled feature experiments](docs/MILESTONE_6.md)
+- [Notebook 05: feature analysis and comparisons](notebooks/05_feature_experiments.ipynb)
 - [Notebook 04: saved LSTM experiment analysis](notebooks/04_lstm_experiments.ipynb)
 
 A Streamlit/Plotly demonstration, final report and assessment defence are planned after the forecasting experiments. The demonstration will present saved results; live trading and profitability claims are outside scope.
 
 ## Statistical benchmark and feature experiments
-See [Milestone 4](docs/MILESTONE_4.md) for the ARIMA protocol, executed comparison and reproduction command. [Notebook 03](notebooks/03_arima_benchmark.ipynb) displays saved forecasts. Technical feature engineering remains central: SMA, EMA, RSI and MACD candidates and three controlled LSTM variants are documented in the [proposal](docs/FEATURE_EXPERIMENT_PROPOSAL.md), pending approval before implementation.
+See [Milestone 4](docs/MILESTONE_4.md) for the ARIMA protocol, executed comparison and reproduction command. [Notebook 03](notebooks/03_arima_benchmark.ipynb) displays saved forecasts. Technical feature engineering remains central: SMA, EMA, RSI and MACD candidates and three controlled LSTM variants are documented in the [proposal](docs/FEATURE_EXPERIMENT_PROPOSAL.md), now implemented and evaluated in [Milestone 6](docs/MILESTONE_6.md).
 
 ## Code documentation standard
 Python modules and functions generally use one-sentence docstrings; a second sentence is added only when needed to clarify a non-obvious contract. Repetitive Parameters, Returns, Raises and Notes sections are avoided. Concise comments beside the implementation explain methodological safeguards, important shapes, transformations and non-obvious calculations. Comments explain why an operation is needed without narrating obvious statements or claiming unimplemented capabilities.

@@ -1,6 +1,6 @@
 # Project progress
 
-Last updated: 14 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Implementation and verification are tracked separately.
+Last updated: 16 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Implementation and verification are tracked separately.
 
 ## Status overview
 | Milestone | Implementation | Verification |
@@ -10,19 +10,20 @@ Last updated: 14 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 | 3. Dataset construction | Complete for price-only inputs | Scaling, alignment and leakage tests passed |
 | 4. Baselines | Naive and ARIMA implemented | 17 tests pass; aligned validation benchmark executed |
 | 5. Stock-only LSTM | Complete; 15/15 fits | 26 tests; notebook and artifacts verified |
-| 6. Controlled feature experiments | Not started | Not performed |
+| 6. Controlled feature experiments | Complete; 9/9 fits | 35 tests, shared dates, checkpoint reloads and notebook verified |
 | 7. Final evaluation | Not started; reserved | No test forecast evaluation |
 | 8. Presentation and delivery | Not started; supporting notes exist | Delivery verification outstanding |
 
 ## 1. Repository foundation
 
 - [x] Establish package structure, scope and configuration.
+- [x] Define notebooks as the primary research narrative and demonstrations, backed by reusable Python modules.
 - [x] Record snapshot provenance and reproducible environment files.
 - [x] Verify foundation data-loading tests and notebook execution.
 
 **Objective/deliverables:** research scope, repository structure, configuration and traceable data provenance.
 
-**Completed:** local repository established; package structure, ignored data/artifact locations, configuration, acquisition checksums and documentation created. Research documentation is organised by purpose.
+**Completed:** local repository established; package structure, ignored data/artifact locations, configuration, acquisition checksums and documentation created. Research documentation is organised by purpose. Notebooks execute the actual Python functions; important algorithms have one authoritative implementation, and analytical findings inform implementation decisions.
 
 **Files:** `README.md`, `START_HERE.md`, `pyproject.toml`, `configs/nvda.json`, `docs/PLAN.md`, `docs/DECISIONS.md`, `docs/data_verification.json`, foundation lockfile and package structure.
 
@@ -34,16 +35,23 @@ Last updated: 14 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 - [x] Verify the Python 3.12 environment and snapshot identities.
 - [x] Explore training data and audit exchange-session coverage.
+- [x] Implement bounded exploratory loading and shared validation diagnostics.
+- [x] Demonstrate validation rejection, calendar coverage and critical EDA interpretation inline.
+- [x] Retain one authoritative Notebook 01 with executed outputs and six inline figures.
 - [x] Define the split-adjusted Close target and document limitations.
 - [ ] Corroborate volume adjustment semantics before using volume features.
 
 **Objective/deliverables:** reproducible environment, training exploration, session coverage and explicit corporate-action conventions.
 
-**Completed:** Python 3.12 environment recorded; three snapshots validated; training notebook executed; split-adjusted Close selected; independent calendar-library comparison performed.
+**Completed:** Python 3.12 environment recorded; frozen snapshots verified; split-adjusted Close defined; training values loaded through explicit temporal bounds and checked with shared financial diagnostics plus independent exchange-calendar comparisons. Notebook 01 documents acquisition and conventions, examines structure and data quality, and analyses price levels, dollar changes, percentage/log returns, distributions, rolling volatility and cross-instrument relationships. It demonstrates rejection of invalid records without altering the source data.
 
 **Files:** `requirements-foundation-lock.txt`, `requirements-milestone2-lock.txt`, `src/market_forecasting/data.py`, `src/market_forecasting/calendar.py`, `scripts/check_snapshot.py`, `scripts/audit_calendar.py`, notebook 01, both audit JSON files, `docs/DATA_CONVENTIONS.md` and [Milestone 2](MILESTONE_2.md).
 
-**Verification/results:** each series has 2,766 full-period rows and 2,014 training sessions. Calendar coverage has no missing or unexpected dates. SPY/XLK use a documented NYSE proxy. Snapshot hashes match the preserved acquisition record in the latest implementation verification.
+**Verification, 16 October 2026:** 58 relevant automated tests passed; all 14 Notebook 01 code cells executed in order in a fresh kernel with six inline figures and no errors. All source checksums matched. The 2,014 training observations per instrument, from 2015-01-02 to 2022-12-30, were reproduced exactly, including values, dtypes and exchange-local dates. Financial checks found no null/nonfinite cells, duplicate dates, non-positive prices, negative volumes or inconsistent OHLC rows. Calendar comparisons found no missing or unexpected training sessions; SPY/XLK use the documented NYSE proxy. Synthetic tests verify excluded quote tokens are not decoded, invalid selected records are rejected, and aligned instruments can still share a missing session. Tests and calculations are reproducible in the existing environment without separate EDA exports.
+
+**EDA findings:** NVDA daily percentage-return standard deviation is 3.030 percentage points, with 126 returns beyond conventional IQR fences; these observations are retained. Daily dollar-change SD increases from 0.0129 USD in 2015 to 0.7666 USD in 2022, while return SD increases from 2.177 to 3.982 percentage points. NVDA log-return correlations are 0.655 with SPY and 0.745 with XLK. These descriptive findings identify scale changes and associations, not predictive improvement. Full-precision calculations and interpretation are retained in Notebook 01.
+
+**Provenance:** the preserved acquisition and calendar records contain 2,766 full-period rows per instrument. Those historical administrative records are distinct from this training-only analysis; no reserved-period price or forecasting performance is inspected.
 
 **Outstanding/next:** corroborate volume semantics before adding volume features; retain retrospective-adjustment and calendar-proxy limitations.
 
@@ -61,7 +69,9 @@ Last updated: 14 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 **Verification/results:** 1,984 training and 502 validation examples. Alignment, boundary context and invariance to post-validation price changes are tested. Calendar completeness is a separately audited precondition, not a builder guarantee.
 
-**Completed extension:** Milestone 5 adds residual-target scaling in `preprocessing.py`, with `tests/test_lstm.py`. **Outstanding/next:** feature warm-up and common eligibility in Milestone 6. No final-test windows are produced by this development path.
+**Related implementation:** Milestone 5 supplies residual-target scaling in `preprocessing.py`, with `tests/test_lstm.py`; Milestone 6 supplies feature warm-up and common eligibility. No final-test windows are produced by this development path.
+
+**Verification, 12 October 2026:** the combined dataset/baseline implementation passed 12 tests, dependency and snapshot checks, and Notebook 02 execution. In-memory recomputation reproduced the saved 502-forecast validation metrics exactly.
 
 ## 4. Baselines
 
@@ -82,7 +92,11 @@ Last updated: 14 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 **Added files:** `src/market_forecasting/arima.py`, `scripts/run_arima_benchmark.py`, `configs/arima.json`, `tests/test_arima.py`, notebook 03 and `requirements-arima-lock.txt`.
 
-**Next:** compare the completed residual LSTM in [Milestone 5](MILESTONE_5.md), then the approved future feature experiments.
+**Verification, 13 October 2026:** 17 tests passed. The ARIMA benchmark generated 502 forecasts on exactly the naive target dates. Notebook 03 executed successfully; dependency checks, snapshot identities and recorded training-source hashes were verified. Test-period performance remains uncomputed.
+
+**Source provenance, 14 October 2026:** documentation-only source edits passed executable-syntax equivalence checks across 13 Python files after excluding docstrings, alongside 17 tests. Historical source hashes remain attached to the original runs rather than being rewritten; forecasting logic and numerical evidence were preserved.
+
+**Related comparisons:** residual LSTM results are recorded in [Milestone 5](MILESTONE_5.md), and controlled feature results in [Milestone 6](MILESTONE_6.md).
 
 ## 5. Stock-only LSTM
 
@@ -99,23 +113,27 @@ Last updated: 14 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 **Results:** selected C (16 units, dropout 0.2, learning rate 0.001, batch 32), with 19 refit epochs. External MAE 1.705023 ± 0.013335 USD and RMSE 2.600560 ± 0.013501 USD across three seeds. Every seed is worse than naive on both metrics. All 15 fits completed; none failed or were replaced.
 
-**Verification:** 26 tests pass; all 15 model reloads reproduce predictions exactly in the recorded environment. The 502 external target dates match the benchmarks. No 2025 forecasts were generated.
+**Verification, 14 October 2026:** 26 tests passed, with five Keras/NumPy serialization deprecation warnings. All 15 complete run records and checkpoint reloads were verified; reloads reproduce predictions exactly in the recorded environment. The 502 external target dates match the benchmarks. Dependency checks, snapshot identities and source/configuration hashes matched. Notebook 04 executed all five code cells without errors. No extra fitting or 2025 forecasts occurred.
 
-**Limitations/next:** single internal holdout, three seeds, narrow search and changing input/volatility distributions. No definitive causal explanation for poor performance. Feature definitions and common eligibility require approval before Milestone 6; no further fitting is included in this milestone.
+**Limitations/next:** single internal holdout, three seeds, narrow search and changing input/volatility distributions. No definitive causal explanation for poor performance. Feature definitions and common eligibility were subsequently approved and implemented in Milestone 6; no further fitting is included in this milestone.
 
 ## 6. Controlled feature experiments
 
-- [x] Document SMA, EMA, RSI and MACD candidates and three controlled LSTM variants.
-- [ ] Finalise the [proposed feature definitions and experimental protocol](FEATURE_EXPERIMENT_PROPOSAL.md) before implementation.
-- [ ] Implement causal technical and market-context features.
-- [ ] Run controlled comparisons, rolling validation and repeated seeds.
-- [ ] Verify results and document variability and limitations.
+- [x] Approve and implement exact SMA/EMA/RSI/MACD definitions and SPY/XLK log returns.
+- [x] Verify causal calculations, common warm-up, alignment and training-only scaling.
+- [x] Complete three variants × three paired seeds at 19 fixed epochs.
+- [x] Save per-run and aggregate results, annual metrics, paired differences and visualisations.
+- [x] Verify saved checkpoints, experiment provenance, preserved Milestone 5 evidence and notebook execution.
 
-**Objective/deliverables:** technical-feature and market-context variants, bounded tuning, rolling validation and repeated-seed comparisons.
+**Objective/deliverables:** controlled comparison of price-only, technical-indicator and market-context residual LSTMs, plus interpretable feature visualisations.
 
-**Completed/files/results:** [feature experiment proposal](FEATURE_EXPERIMENT_PROPOSAL.md) documents price-only, technical-indicator and multivariate SPY/XLK comparisons. Parameters, warm-up, causal formulas and evaluation methods await approval; no feature implementation or experiment result exists.
+**Files:** `features.py`, feature experiment/report scripts, feature tests and configuration, notebook 05, [approved specification](FEATURE_EXPERIMENT_PROPOSAL.md), [technical results](MILESTONE_6.md), [results JSON](feature_results_v1.json) and [verification record](feature_verification_v1.json). Local evidence is in `artifacts/features_v1/`.
 
-**Outstanding/verification/next:** specify exact feature definitions and comparison protocol, resolve volume inclusion, implement causal transformations and run controlled experiments.
+**Results:** A/B/C mean MAE 1.702600/1.717304/1.715305 USD; mean RMSE 2.599713/2.609909/2.606177 USD. Each run uses 1,935 fitting examples and the original 502 validation dates. All nine fits completed; all have higher full-period errors than naive. No extra tuning or replacement runs occurred.
+
+**Verification, 16 October 2026:** 35 tests passed, with five existing Keras/NumPy serialization deprecation warnings. Indicator seeds, first-valid dates, common eligibility, scaling and future perturbations are tested. All nine checkpoints reproduced predictions exactly, with 19 epochs and no validation monitoring. Ten training-source hashes and configuration hashes matched; dependency and snapshot checks passed. Notebook 05 executed six code cells without errors. The verification record confirms preservation of 74 protected files, including Milestone 5 evidence. No additional fitting or 2025 feature/evaluation work occurred. See [verification evidence](feature_verification_v1.json).
+
+**Limitations/next:** grouped comparisons do not identify individual indicator importance; three seeds and a fixed training budget limit generalisation. Input dimensions change parameter counts. Volume remains excluded. Final methodology awaits explicit approval before Milestone 7; no 2025 features or forecasts have been generated.
 
 ## 7. Final evaluation
 
@@ -140,18 +158,3 @@ Last updated: 14 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 **Completed/files/results:** notebooks and technical notes provide supporting material; no completed dashboard, final report or defence assessment.
 
 **Outstanding/verification/next:** prepare delivery after experiments; confirm individual teamwork-mark treatment and assessment expectations; verify submission requirements, demonstration and reproduction.
-
-## Verification record
-- Foundation run: six passing tests; snapshot checks and notebook 01 execution recorded.
-- First benchmark implementation run: 12 passing tests; snapshot checks, dependency consistency and notebook 02 execution recorded. See [dataset evidence](MILESTONE_3.md) and [benchmark evidence](MILESTONE_4.md).
-- Documentation audit, 12 October 2026: compared stored baseline summary and calendar evidence with prose; both saved executed notebooks contained no error outputs. No new experiment was run during that audit.
-- Prior documentation verification, 12 October 2026: 12 tests passed, all snapshot checksums and row counts verified, and documented baseline metrics matched saved evidence. Notebook code and outputs were preserved.
-- Research-documentation verification, 12 October 2026: 12 automated tests passed; all three snapshot checksums and row counts verified; 43 local links resolved. In-memory recomputation reproduced the saved 502-forecast validation metrics exactly. All 38 files outside the cleanup scope were byte-identical, and both notebooks retained their code, outputs and metadata. No 2025 forecast evaluation was performed.
-- Final documentation verification, 12 October 2026: 12 automated tests passed; all snapshot checksums and row counts verified; 43 local links resolved. Documented metrics matched the saved baseline summary. All 38 files outside the documentation scope were byte-identical; notebook code, outputs and metadata were preserved. No model experiment or test-period evaluation was run.
-
-- ARIMA implementation verification, 13 October 2026: 17 tests passed. The development-only benchmark generated 502 forecasts on exactly the naive baseline target dates. Notebook 03 executed without errors, installed dependencies passed consistency checks, and all snapshot checksums matched. Source hashes and 53 local Markdown links were verified. Existing target configuration, dataset code, notebooks 01–02 and frozen audits were unchanged from the initial commit. Test-period performance remains uncomputed.
-
-- Source-documentation verification, 14 October 2026: 17 tests passed and all three snapshot checksums/row counts matched. Executable syntax was equivalent before and after removing docstrings across all 13 Python files; 12 received documentation edits. All 21 protected data, configuration, notebook and artifact files were byte-identical. Ninety local Markdown links resolved. Historical ARIMA source hashes remain attached to the original run and were not rewritten. No LSTM training was performed.
-- Documentation-style verification, 14 October 2026: simplified docstrings and moved essential contracts beside the relevant operations. All 17 tests passed; snapshot checksums and row counts matched. Executable syntax remained equivalent across 13 Python files after excluding docstrings, and 21 protected data/configuration/notebook/artifact files were unchanged. No experiment was rerun.
-
-- Milestone 5 verification, 14 October 2026: 26 tests passed (five Keras/NumPy serialization deprecation warnings). All three snapshot hashes and 2,766-row counts matched; installed dependencies passed consistency checks. Fifteen complete run records and exact checkpoint-reload predictions were verified, with source/search/forecast configuration hashes unchanged. Notebook 04 executed all five code cells without errors. All 115 local documentation links resolved before this verification entry. No extra fitting or 2025 evaluation occurred.

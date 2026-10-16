@@ -2,15 +2,21 @@
 
 Current implementation and verification status is maintained in [PROGRESS.md](PROGRESS.md); dataset definitions are maintained in [DATA_CONVENTIONS.md](DATA_CONVENTIONS.md).
 
-## 2026-10-11 — Research scope and architecture
-**Decision:** use topic 1h, Time Series Forecasting with LSTM and Feature Engineering, with NVDA as the initial case study. Use notebooks for explanation, Python modules for reusable logic and a later dashboard for presentation.
+## Research scope and architecture
+**Recorded:** research scope, 11 October 2026; notebook-centred architecture, 16 October 2026.
 
-**Rationale and implications:** separation of analysis and reusable implementation supports reproducibility and technical demonstration. Ticker configuration and retraining support future extension but do not establish compatibility with every instrument. TensorFlow/Keras is the proposed modelling framework, subject to environment verification.
+**Decision:** use topic 1h, Time Series Forecasting with LSTM and Feature Engineering, with NVDA as the initial case study. Notebooks provide the analysis, methodology, demonstrations, visualisations and conclusions. Python modules provide reusable technical implementations. Notebooks import and execute the actual functions, and important transformations and algorithms have one authoritative implementation. Findings inform whether those implementations should be retained or improved.
 
-## 2026-10-11 — Data preservation and evaluation boundaries
-**Decision:** preserve frozen vendor snapshots and exclude vendor data, environments and generated model artifacts from Git. Reserve 2025 for final forecast evaluation. Allow administrative data-quality checks without using test performance for selection.
+**Rationale and implications:** separating scientific reasoning from reusable algorithms supports reproducibility and technical demonstration without duplicating production logic. Each stage has one authoritative notebook with its necessary executed outputs. A later dashboard can present verified results. Ticker configuration and retraining support future extension but do not establish compatibility with every instrument. TensorFlow/Keras supplies the LSTM implementation; the verified environment is recorded separately.
 
-**Rationale and implications:** fixed inputs permit verification of experiments while temporal separation limits selection leakage. Raw-data sharing remains subject to permitted submission and distribution arrangements. Git was initially local; no remote publication was performed as part of foundation development.
+## Data acquisition, integrity and temporal boundaries
+**Recorded:** snapshot preservation and test reservation, 11 October 2026; bounded exploratory access, 16 October 2026.
+
+**Decision:** preserve frozen vendor snapshots and exclude vendor data, environments and generated model artifacts from Git. Reserve 2025 for final forecast evaluation. Exploratory loading uses explicit inclusive bounds to select timestamp positions before decoding and validating quote values. Notebook 01 uses the training interval. Snapshot identity is checked by hashing opaque bytes, separately from numerical and calendar validation.
+
+**Rationale and alternatives:** frozen inputs support reproducibility, while temporal boundaries restrict the information used in analysis. Loading complete quote arrays before filtering would interpret values outside the permitted interval. A separate notebook parsing algorithm would duplicate technical logic. Bounded loading in the reusable module avoids both issues. Shared `price_quality()` diagnostics explain the checks enforced by `validate_prices()`; independent session auditing additionally detects gaps shared across instruments.
+
+**Constraints:** the bounded extractor supports the frozen chronological Yahoo scalar-array schema and cannot certify ordering or completeness in an unread future tail. Values and exchange-local dates are preserved without silent adjustment, filling or sorting. Administrative checks do not establish forecasting skill or vendor accuracy. Raw-data sharing remains subject to permitted submission and distribution arrangements.
 
 ## 2026-10-11 — Reproducibility and provenance
 **Decision:** record package versions, snapshot identities, consequential decisions and verification evidence.
@@ -40,12 +46,12 @@ Current implementation and verification status is maintained in [PROGRESS.md](PR
 ## 2026-10-13 — Technical-feature experimental scope
 **Decision:** retain SMA, EMA, RSI and MACD as candidate features and compare price-only, technical-indicator and multivariate SPY/XLK LSTMs. ARIMA is a comparator rather than a replacement for feature engineering.
 
-**Rationale and implications:** nested input sets isolate the incremental contribution of technical features and market context. Shared eligibility, model settings and paired seeds reduce confounding. Detailed parameters and calculation conventions remain [proposed](FEATURE_EXPERIMENT_PROPOSAL.md); no feature or LSTM implementation is completed.
+**Rationale and implications:** nested input sets isolate the incremental contribution of technical features and market context. Shared eligibility, model settings and paired seeds reduce confounding. This decision defined the [feature proposal](FEATURE_EXPERIMENT_PROPOSAL.md); its fixed comparison and observed outcome are recorded below under 15 October 2026.
 
 ## 2026-10-14 — Bounded LSTM optimisation investigation
 **Decision:** retain four configurations with paired seeds 42, 123 and 2026. Configuration D changes Adam learning rate from 0.001 to 0.0003 relative to A; all configurations use batch size 32. B varies hidden units and C varies post-LSTM dropout. Twelve internal-selection runs and three selected-configuration full-development fits form the planned 15-run budget.
 
-**Rationale and implications:** one-factor contrasts isolate capacity, regularisation and optimiser step size within a common training budget. Batch-size effects and hyperparameter interactions are not investigated. The chronological 2022 holdout, early stopping and predefined selection rule are retained in the [design](MILESTONE_5_DESIGN.md). Loss histories, convergence, best epochs and stopping epochs remain required evidence; no LSTM run is yet completed.
+**Rationale and implications:** one-factor contrasts isolate capacity, regularisation and optimiser step size within a common training budget. Batch-size effects and hyperparameter interactions are not investigated. The chronological 2022 holdout, early stopping and predefined selection rule are retained in the [design](MILESTONE_5_DESIGN.md). Loss histories, convergence, best epochs and stopping epochs are required evidence. The selected configuration and completed runs are recorded below under 14 October 2026.
 
 ## 2026-10-14 — Residual dollar-correction LSTM
 **Decision:** predict a standardised next-session dollar correction and reconstruct price by adding its inverse-transformed value to the latest observed Close. Apply this formulation consistently to the Milestone 5 configurations and later feature variants.
@@ -56,3 +62,8 @@ Current implementation and verification status is maintained in [PROGRESS.md](PR
 All four configurations completed three paired seeds. D had the lowest mean internal MAE, but all four were within the predefined 1% band. The rule first preferred 16 units, then selected C for the lowest across-seed MAE standard deviation. The selected dropout is 0.2, Adam learning rate 0.001 and batch size 32. Median best epoch 19 defines the three fresh full-development fits. The versioned [configuration](../configs/lstm_selected_v1.json) was written before external evaluation.
 
 The mean external MAE of 1.705023 USD is worse than the naive 1.689494 USD. This does not authorise additional search; all 15 fits and their outcomes are retained. The limited seed count does not establish statistical superiority or globally optimal hyperparameters. Milestone 6 will retain this residual formulation, architecture and fixed training protocol, with separate weights and a new price-only control on the common feature-eligible interval. See [results and limitations](MILESTONE_5.md).
+
+## 15 October 2026 — Fixed feature comparison and observed outcome
+Executed the approved nine-run comparison with common warm-up, training-only scaling and the selected residual LSTM settings. Models A/B/C use 1/8/10 features and 1,169/1,617/1,745 parameters. The 49-row feature warm-up removes 49 fitting examples relative to Milestone 5, so a newly fitted price-only Model A is the appropriate control. All models share 1,935 fitting examples and 502 external targets.
+
+Mean MAE is 1.702600 USD for A, 1.717304 for B and 1.715305 for C. All nine runs are worse than naive on full-period MAE/RMSE. Technical features did not improve the average result; adding context offers a small, seed-dependent improvement over B but not A. No additional tuning, seed selection or individual-indicator importance claim is justified. All runs and Milestone 5 evidence are retained. Results do not automatically freeze a final model; explicit approval is required before Milestone 7. See [full evidence](MILESTONE_6.md).

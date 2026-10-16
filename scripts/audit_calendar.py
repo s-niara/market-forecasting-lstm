@@ -1,23 +1,29 @@
-"""Audit frozen snapshot session dates without analysing price performance."""
+"""Display a training-period session audit without decoding quote values."""
 import json
-from pathlib import Path
 from importlib.metadata import version
-import pandas as pd
+from pathlib import Path
 from market_forecasting.calendar import audit_sessions
+from market_forecasting.data import load_yahoo_session_dates
 
-root=Path(__file__).resolve().parents[1]
-config=json.loads((root/'configs/nvda.json').read_text())
-report={"calendar_library_version":version('pandas-market-calendars'),
-        "scope":"Dates only, including test calendar; no performance inspection",
-        "benchmark_calendar_note":"NYSE regular equity sessions used as proxy for NYSE Arca ETFs; not an official exchange-certified audit",
-        "series":{}}
 
-# Exchange-local labels identify daily sessions; no OHLCV values enter this audit.
-for ticker, calendar in [('NVDA','NASDAQ'),('SPY','NYSE'),('XLK','NYSE')]:
-    payload=json.loads((root/'data/raw'/f'{ticker}_yahoo_snapshot.json').read_text())['chart']['result'][0]
-    dates=pd.to_datetime(payload['timestamp'],unit='s',utc=True).tz_convert('America/New_York').normalize().tz_localize(None)
-    report['series'][ticker]=audit_sessions(dates,config['start'],str((pd.Timestamp(config['end_exclusive'])-pd.Timedelta(days=1)).date()),calendar)
-path=root/'docs/calendar_audit_2026-10-12.json'
-# Exclusive creation preserves the previous audit as reproducibility evidence.
-with path.open('x') as f: json.dump(report,f,indent=2)
-print(json.dumps(report,indent=2))
+def main():
+    """Compare configured training dates with exchange-calendar sessions."""
+    root = Path(__file__).resolve().parents[1]
+    config = json.loads((root / "configs/nvda.json").read_text())
+    report = {"calendar_library_version": version("pandas-market-calendars"),
+              "scope": {"start": config["start"], "end": config["train_end"], "quote_values_decoded": False},
+              "benchmark_calendar_note": "NYSE regular equity sessions are a proxy for NYSE Arca ETFs, not exchange certification",
+              "series": {}}
+    for symbol, calendar in [("NVDA", "NASDAQ"), ("SPY", "NYSE"), ("XLK", "NYSE")]:
+        dates = load_yahoo_session_dates(root / "data/raw" / f"{symbol}_yahoo_snapshot.json",
+                                        start=config["start"], end=config["train_end"])
+        report["series"][symbol] = audit_sessions(dates, config["start"], config["train_end"], calendar)
+    # Display the audit without replacing the preserved historical report.
+    print(json.dumps(report, indent=2))
+    if any(a["missing"] or a["unexpected"] or a["duplicate_dates"] or not a["ordered"]
+           for a in report["series"].values()):
+        raise SystemExit("Training calendar audit failed; investigate without filling records")
+
+
+if __name__ == "__main__":
+    main()

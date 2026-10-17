@@ -84,10 +84,14 @@ Last updated: 17 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 - [x] Define and implement training-AIC ARIMA selection with fixed-parameter state updates.
 - [x] Verify comparable validation dates and forecast availability for both baselines.
 - [x] Present the naive protocol, metric calculations and validation error analysis in the authoritative executed Notebook 02.
+- [x] Present training-period differencing, stationarity and correlation diagnostics in Notebook 03.
+- [x] Reproduce the predetermined ARIMA order and verify coefficients, AIC and all recorded rolling forecasts.
+- [x] Trace forecast-before-observation events, fixed coefficients and filtered-state updates.
+- [x] Examine training innovations with explicit initialization exclusion and diagnostic limitations.
 
 **Objective/deliverables:** naive and traditional statistical forecasts under an explicit, comparable evaluation protocol.
 
-**Completed:** naive and ARIMA forecasts, training-only ARIMA selection, rolling one-step validation, MAE/RMSE comparison, run metadata and explanatory notebooks.
+**Completed:** naive and ARIMA forecasts, training-only ARIMA selection, rolling one-step validation, MAE/RMSE comparison, run metadata and explanatory notebooks. Notebook 03 reuses the nine recorded candidate results and performs one predetermined selected-order training fit per execution for numerical reproduction and diagnostics. The runner checks snapshot identity, loads only the development interval and validates calendar coverage before fitting.
 
 **Files:** `scripts/build_naive_baseline.py`, `src/market_forecasting/dataset.py`, notebook 02, `tests/test_milestone2.py`, [Milestone 4](MILESTONE_4.md); ignored predictions and summary in `artifacts/naive_v1/`.
 
@@ -99,9 +103,13 @@ Last updated: 17 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 **Added files:** `src/market_forecasting/arima.py`, `scripts/run_arima_benchmark.py`, `configs/arima.json`, `tests/test_arima.py`, notebook 03 and `requirements-arima-lock.txt`.
 
+**ARIMA diagnostic evidence:** training Close gives ADF p = 0.704783 and KPSS p < 0.01; its first dollar difference gives ADF p approximately 8.15 × 10⁻¹⁶ and KPSS p > 0.10. These results are compatible with the specified first-difference treatment under the tests' assumptions; they do not establish constant variance or general stationarity. The AR and MA polynomials partly offset, so large individual coefficients do not establish strong net predictability. Training innovation plots and autocorrelation diagnostics examine remaining serial dependence and changing dispersion without expanding the candidate set or changing the selected order.
+
 **Verification, 13 October 2026:** 17 tests passed. The ARIMA benchmark generated 502 forecasts on exactly the naive target dates. Notebook 03 executed successfully; dependency checks, snapshot identities and recorded training-source hashes were verified. Test-period performance remains uncomputed.
 
 **Source provenance, 14 October 2026:** documentation-only source edits passed executable-syntax equivalence checks across 13 Python files after excluding docstrings, alongside 17 tests. Historical source hashes remain attached to the original runs rather than being rewritten; forecasting logic and numerical evidence were preserved.
+
+**ARIMA verification, 17 October 2026:** 114 automated tests passed across the data, dataset/baseline, ARIMA, LSTM and feature suites (five existing Keras/NumPy deprecation warnings), and all 18 Notebook 03 code cells executed in a fresh kernel with 8 inline figures. One selected ARIMA(2,1,2) fit reproduced the recorded parameters and AIC 1756.733879471. All 502 rolling forecasts, target dates and benchmark metrics match the preserved evidence within the stated numerical tolerances. Trace events verify prediction before revealing each target and coefficient preservation during state updates. Bounded-loading and calendar checks protect the data path. The nine-candidate search is read from its recorded evidence rather than repeated, and no reserved-period price or performance is used. Notebook outputs remain inline; original experiment files and source-hash records are unchanged.
 
 **Related comparisons:** residual LSTM results are recorded in [Milestone 5](MILESTONE_5.md), and controlled feature results in [Milestone 6](MILESTONE_6.md).
 
@@ -112,7 +120,9 @@ Last updated: 17 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 - [x] Complete 12 internal-selection fits and three fixed-epoch full-development fits.
 - [x] Verify alignment, leakage safeguards, checkpoint restoration and reload equivalence.
 - [x] Record all runs, loss curves, benchmark comparisons and limitations.
-- [x] Execute the demonstration notebook without retraining.
+- [x] Execute the 14-section architecture, preprocessing, optimisation and inference demonstration without retraining.
+- [x] Verify all 15 checkpoints, target reconstruction, model selection and recorded loss histories.
+- [x] Quantify input and correction distribution shifts without changing the model formulation.
 
 **Objective/deliverables:** reproducible residual LSTM, controlled optimisation comparisons, locked configuration and external-validation results.
 

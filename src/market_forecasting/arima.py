@@ -61,22 +61,29 @@ def select_training_model(training, orders, maxiter=500):
     return best, records
 
 
-def rolling_one_step(fitted, observed):
+def rolling_one_step(fitted, observed, *, trace=None):
     """Forecast before each observed target, then update state with fixed parameters."""
     # The fitted history must end just before these chronological target observations.
     observed = np.asarray(observed, dtype=float)
     if observed.ndim != 1 or not np.isfinite(observed).all():
         raise ValueError("Finite one-dimensional validation observations required")
     state, predictions = fitted, []
-    for actual in observed:
+    for step, actual in enumerate(observed):
         # Forecast before revealing this target; otherwise its actual value would leak
         # into its own prediction. Extract the single horizon as a scalar.
         forecast = float(np.asarray(state.forecast(steps=1)).reshape(-1)[0])
         if not np.isfinite(forecast):
             raise RuntimeError("Non-finite ARIMA forecast; run aborted")
         predictions.append(forecast)
+        if trace is not None:
+            # Record the forecast before revealing its target; copy parameter values for inspection.
+            trace.append({"step": step, "event": "forecast", "prediction": forecast,
+                          "parameters": np.asarray(state.params).tolist()})
         # Filter the newly observed Close for the next forecast, without refitting coefficients.
         state = state.extend([float(actual)])
+        if trace is not None:
+            trace.append({"step": step, "event": "update", "observed_close": float(actual),
+                          "parameters": np.asarray(state.params).tolist()})
     return np.asarray(predictions)
 
 

@@ -1,14 +1,14 @@
 # Project progress
 
-Last updated: 16 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Implementation and verification are tracked separately.
+Last updated: 17 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Implementation and verification are tracked separately.
 
 ## Status overview
 | Milestone | Implementation | Verification |
 |---|---|---|
 | 1. Repository foundation | Established | Foundation checks recorded |
 | 2. Environment and data audit | Partial; volume unresolved | Environment, snapshots, calendar and notebook checked |
-| 3. Dataset construction | Complete for price-only inputs | Scaling, alignment and leakage tests passed |
-| 4. Baselines | Naive and ARIMA implemented | 17 tests pass; aligned validation benchmark executed |
+| 3. Dataset construction | Complete for price-only inputs | Bounded loading, window alignment, input contracts and leakage checks passed |
+| 4. Baselines | Naive and ARIMA implemented | Recorded forecasts preserved; Notebook 02 metrics and alignment verified |
 | 5. Stock-only LSTM | Complete; 15/15 fits | 26 tests; notebook and artifacts verified |
 | 6. Controlled feature experiments | Complete; 9/9 fits | 35 tests, shared dates, checkpoint reloads and notebook verified |
 | 7. Final evaluation | Not started; reserved | No test forecast evaluation |
@@ -59,11 +59,13 @@ Last updated: 16 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 - [x] Implement price-only windows and target-date partitions.
 - [x] Test alignment, boundary context and exclusion of post-validation prices.
+- [x] Use bounded development loading, snapshot provenance and calendar preflight in Notebook 02.
+- [x] Trace every window against source observations and demonstrate the one-dimensional input contract.
 - [x] Implement and verify model-specific training-only scaling.
 
 **Objective/deliverables:** chronological target-date partitions, forecasting windows, training-only transformations and leakage checks.
 
-**Completed:** unscaled, single-feature, 30-session development windows; next-session targets; partition metadata; truncation before post-validation numerical processing.
+**Completed:** unscaled, single-feature, 30-session development windows; next-session targets; partition metadata; bounded quote loading through the development endpoint and separate calendar verification. The builder rejects non-Series inputs and truncates before post-validation numerical processing. Notebook 02 explains the representation and verifies input values, target values and metadata dynamically for every window.
 
 **Files:** `src/market_forecasting/dataset.py`, `configs/nvda.json`, notebook 02, `tests/test_milestone2.py`; local window arrays and metadata in `artifacts/naive_v1/`. Technical summary: [Milestone 3](MILESTONE_3.md).
 
@@ -73,12 +75,15 @@ Last updated: 16 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 **Verification, 12 October 2026:** the combined dataset/baseline implementation passed 12 tests, dependency and snapshot checks, and Notebook 02 execution. In-memory recomputation reproduced the saved 502-forecast validation metrics exactly.
 
+**Verification, 17 October 2026:** 103 automated tests passed across the data, dataset/baseline, ARIMA, LSTM and feature suites (five existing Keras/NumPy deprecation warnings). All 23 Notebook 02 code cells executed in order in a fresh kernel with 5 inline figures and no errors. Bounded loading and calendar checks preserve 2,486 windows of shape `(30, 1)`, including 1,984 training and 502 validation examples. Every window, target and metadata row is checked against source positions. The first validation forecast uses 2022-12-30 Close for the 2023-01-03 target. No reserved-period quote values are decoded or evaluated.
+
 ## 4. Baselines
 
 - [x] Implement and evaluate the naive validation baseline.
 - [x] Verify error metrics against known values and save run metadata.
 - [x] Define and implement training-AIC ARIMA selection with fixed-parameter state updates.
 - [x] Verify comparable validation dates and forecast availability for both baselines.
+- [x] Present the naive protocol, metric calculations and validation error analysis in the authoritative executed Notebook 02.
 
 **Objective/deliverables:** naive and traditional statistical forecasts under an explicit, comparable evaluation protocol.
 
@@ -86,7 +91,9 @@ Last updated: 16 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 **Files:** `scripts/build_naive_baseline.py`, `src/market_forecasting/dataset.py`, notebook 02, `tests/test_milestone2.py`, [Milestone 4](MILESTONE_4.md); ignored predictions and summary in `artifacts/naive_v1/`.
 
-**Verification/results:** 502 validation forecasts; MAE **1.689494114 USD**, RMSE **2.589323812 USD** on the retrospective split-adjusted basis. These match the saved summary. Metric tests use known expected values. No test-period score is available.
+**Verification/results:** 502 validation forecasts; MAE **1.689494114 USD**, RMSE **2.589323812 USD** on the retrospective split-adjusted basis. These match the saved summary. Metric tests use known expected values. Notebook 02 checks the same metrics through explicit formulas and reports annual results, forecast errors and illustrative windows without fitting parameters or creating a separate experiment. No test-period score is available.
+
+**Notebook evidence, 17 October 2026:** the twelve-section narrative covers bounded data access, session validity, chronological partitions, sequence construction, alignment, naive forecasting, rolling evaluation, MAE/RMSE, error analysis and limitations. All outputs remain inline. Original benchmark arrays, predictions and metadata are preserved, and recorded source hashes continue to identify the original runs. The shared execution and test totals are recorded under dataset construction above.
 
 **ARIMA result:** selected (2,1,2); validation MAE 1.720200573 USD and RMSE 2.612846480 USD, approximately 1.82% worse MAE than naive. All nine candidates converged; starting-parameter warnings are retained. See [Milestone 4](MILESTONE_4.md) and [run metadata](arima_validation_v1.json).
 

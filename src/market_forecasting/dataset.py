@@ -25,6 +25,9 @@ def build_development_dataset(close: pd.Series, config: dict) -> ForecastDataset
         raise ValueError("Sequence length must be a positive integer")
     # Expect a Close Series with daily session labels. Ordering is checked here;
     # complete exchange-calendar coverage must have been audited separately.
+    # A DataFrame would silently add an unintended dimension to X and y.
+    if not isinstance(close, pd.Series):
+        raise TypeError("Close must be a one-dimensional pandas Series")
     if not isinstance(close.index, pd.DatetimeIndex) or close.index.has_duplicates or not close.index.is_monotonic_increasing:
         raise ValueError("Unique chronological DatetimeIndex required")
     start, train_end, val_end = map(pd.Timestamp, [config["start"],config["train_end"],config["validation_end"]])

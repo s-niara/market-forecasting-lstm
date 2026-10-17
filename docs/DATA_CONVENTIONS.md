@@ -28,8 +28,10 @@ Notebook 01 uses `load_training_panel()`, which passes explicit inclusive start/
 
 Opaque snapshot checksums establish identity, separately from numerical validation. `price_quality()` supplies the diagnostic counts used by `validate_prices()`; an independent calendar audit remains required because matching instrument indexes can share the same missing session. The unbounded snapshot API is available for administrative use; Notebook 01 always uses explicit bounds.
 
+Notebook 02 uses explicit development bounds ending 2024-12-31. Snapshot provenance and an independent NASDAQ session audit precede dataset construction. The same bounded loader restricts quote decoding; the dataset builder additionally restricts the interval before numerical validation and window construction. No reserved-period price is needed for this path.
+
 ## Windows, transformations and evaluation
-The current development dataset contains unscaled, 30-session, single-feature Close windows. Thirty sessions is an initial setting, not a validated optimum. Scaling is unnecessary for the naive baseline; transformations required by later models must be fitted on training observations only.
+The price-only development builder accepts a pandas Series indexed by chronological session dates and produces unscaled, 30-session, single-feature Close windows. A DataFrame does not satisfy this one-dimensional input contract. Each window ends at its forecast origin and its target is the immediately following observed session. The representation contains 1,984 training and 502 validation examples with shape `(2486, 30, 1)`. Thirty sessions defines the common lookback, not a validated optimum. Scaling is unnecessary for the naive baseline; model-specific transformations must be fitted on their permitted training observations only.
 
 The naive protocol is rolling one-step forecasting: use the preceding session's observed Close for each target. Earlier validation observations may enter later forecast inputs as they become available. This does not constitute parameter fitting on validation data or a single long-horizon forecast. See [Milestone 3](MILESTONE_3.md) for dataset construction and [Milestone 4](MILESTONE_4.md) for executed forecast results.
 

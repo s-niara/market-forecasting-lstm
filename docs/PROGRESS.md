@@ -9,7 +9,7 @@ Last updated: 17 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 | 2. Environment and data audit | Partial; volume unresolved | Environment, snapshots, calendar and notebook checked |
 | 3. Dataset construction | Complete for price-only inputs | Bounded loading, window alignment, input contracts and leakage checks passed |
 | 4. Baselines | Naive and ARIMA implemented | Recorded forecasts preserved; Notebook 02 metrics and alignment verified |
-| 5. Stock-only LSTM | Complete; 15/15 fits | 26 tests; notebook and artifacts verified |
+| 5. Stock-only LSTM | Complete; 15/15 fits | 123 tests; 15-checkpoint inference, scaling and executed notebook verified |
 | 6. Controlled feature experiments | Complete; 9/9 fits | 35 tests, shared dates, checkpoint reloads and notebook verified |
 | 7. Final evaluation | Not started; reserved | No test forecast evaluation |
 | 8. Presentation and delivery | Not started; supporting notes exist | Delivery verification outstanding |
@@ -131,6 +131,10 @@ Last updated: 17 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 **Results:** selected C (16 units, dropout 0.2, learning rate 0.001, batch 32), with 19 refit epochs. External MAE 1.705023 ± 0.013335 USD and RMSE 2.600560 ± 0.013501 USD across three seeds. Every seed is worse than naive on both metrics. All 15 fits completed; none failed or were replaced.
 
 **Verification, 14 October 2026:** 26 tests passed, with five Keras/NumPy serialization deprecation warnings. All 15 complete run records and checkpoint reloads were verified; reloads reproduce predictions exactly in the recorded environment. The 502 external target dates match the benchmarks. Dependency checks, snapshot identities and source/configuration hashes matched. Notebook 04 executed all five code cells without errors. No extra fitting or 2025 forecasts occurred.
+
+**Verification, 17 October 2026:** all 20 Notebook 04 code cells execute in order in a fresh kernel, retaining 11 inline figures and no notebook errors or warnings. The full automated suite passes 123 tests, with five existing Keras/NumPy serialization deprecation warnings. Tests include nine bounded-stage loading cases covering exclusion before decoding, snapshot integrity and calendar rejection. Both stages reproduce the saved scaling provenance, target counts and temporal alignment. All 15 loaded checkpoints reproduce recorded predictions, with maximum discrepancy 4.998 × 10⁻¹¹ USD from JSON rounding. Configuration C, median 19 epochs, 1,169 trainable parameters, 1,178 updates per final fit and all 502 external dates are verified. The runner uses the shared bounded loader; original numerical inputs and experimental evidence remain unchanged. No additional research training or reserved-period quote decoding occurs.
+
+**Analytical findings:** end-of-epoch inference losses distinguish optimisation behaviour from the change in dollar-movement scale; internal naïve standardised MSE is 7.571391. Of 502 validation closes, 403 exceed the maximum fitting input price. Dollar-change SD rises from 1.015 USD in 2023 to 3.500 USD in 2024, while percentage-return SD is 3.051 and 3.307 percentage points. These observations motivate a controlled representation question, not a diagnosis of gate saturation or an approved model change. Complete calculations and interpretations are in [Notebook 04](../notebooks/04_lstm_experiments.ipynb).
 
 **Limitations/next:** single internal holdout, three seeds, narrow search and changing input/volatility distributions. No definitive causal explanation for poor performance. Feature definitions and common eligibility were subsequently approved and implemented in Milestone 6; no further fitting is included in this milestone.
 

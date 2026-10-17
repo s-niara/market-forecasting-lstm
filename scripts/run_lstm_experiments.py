@@ -12,6 +12,7 @@ import traceback
 import numpy as np
 import pandas as pd
 from market_forecasting.calendar import audit_sessions
+from market_forecasting.data import load_yahoo_snapshot, snapshot_provenance
 from market_forecasting.dataset import error_metrics
 from market_forecasting.preprocessing import prepare_residual_data, reconstruct_prices
 from market_forecasting.lstm import (configure_runtime, build_model, train_model,
@@ -27,23 +28,18 @@ def write_json(path, value):
 
 
 def load_stage(config, end):
-    """Verify the frozen snapshot and return only the requested development interval."""
-    raw = (ROOT / "data/raw" / f"{config['target_ticker']}_yahoo_snapshot.json").read_bytes()
-    sha = hashlib.sha256(raw).hexdigest()
-    audit = json.loads((ROOT / "docs/data_verification.json").read_text())
-    if sha != audit["series"][config["target_ticker"]]["sha256"]:
-        raise ValueError("Snapshot identity changed")
-    payload = json.loads(raw)["chart"]["result"][0]
-    dates = pd.to_datetime(payload["timestamp"], unit="s", utc=True).tz_convert(
-        payload["meta"]["exchangeTimezoneName"]).normalize().tz_localize(None)
-    # Select timestamps before converting prices, excluding later values from analysis.
-    pairs = [(d, c) for d, c in zip(dates, payload["indicators"]["quote"][0]["close"])
-             if pd.Timestamp(config["start"]) <= d <= pd.Timestamp(end)]
-    close = pd.Series([c for _, c in pairs], index=pd.DatetimeIndex([d for d, _ in pairs]), dtype=float)
+    """Verify and load a bounded development interval without decoding later prices."""
+    if not pd.Timestamp(config["start"]) <= pd.Timestamp(end) <= pd.Timestamp(config["validation_end"]):
+        raise ValueError("Stage end must remain within the configured development interval")
+    snapshot = ROOT / "data/raw" / f"{config['target_ticker']}_yahoo_snapshot.json"
+    provenance = snapshot_provenance(snapshot, ROOT / "docs/data_verification.json", config["target_ticker"])
+    close = load_yahoo_snapshot(snapshot, start=config["start"], end=end)["close"].astype(float)
+    # Preserve the original unnamed Series and session index for both experiment runners.
+    close = close.rename(None).rename_axis(None)
     coverage = audit_sessions(close.index, config["start"], end, "NASDAQ")
     if coverage["missing"] or coverage["unexpected"] or coverage["duplicate_dates"] or not coverage["ordered"]:
         raise ValueError("Development calendar coverage failed")
-    return close, sha
+    return close, provenance["sha256"]
 
 
 def execute_run(prepared, cfg, seed, phase, search, provenance, output):

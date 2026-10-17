@@ -160,3 +160,119 @@ def test_existing_run_is_not_overwritten(tmp_path):
     with pytest.raises(FileExistsError):
         runner["execute_run"](None, None, None, None, None, None, tmp_path)
     assert marker.read_text() == "preserve"
+
+
+
+def stage_runner():
+    """Import the LSTM runner without starting an experiment phase."""
+    import importlib.util
+    from pathlib import Path
+    path = Path(__file__).resolve().parents[1] / "scripts/run_lstm_experiments.py"
+    spec = importlib.util.spec_from_file_location("lstm_stage_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def stage_repository(tmp_path, *, missing_session=False, future_marker=False):
+    """Create synthetic quotes and acquisition metadata entirely in a temporary directory."""
+    import hashlib
+    root = tmp_path / "synthetic_stage"
+    (root / "data/raw").mkdir(parents=True)
+    (root / "docs").mkdir()
+    config = dict(target_ticker="NVDA", start="2020-01-02", train_end="2020-01-06",
+                  validation_end="2020-01-10", test_end="2020-01-17")
+    dates = pd.bdate_range("2020-01-02", "2020-01-13")
+    prices = list(np.arange(11., 11. + len(dates)))
+    quote = {"open": [v - .5 for v in prices], "high": [v + 1 for v in prices],
+             "low": [v - 1 for v in prices], "close": prices, "volume": [100] * len(dates)}
+    adjusted = [v - .25 for v in prices]
+    timestamps = [int((date.tz_localize("America/New_York") + pd.Timedelta(hours=16)).timestamp())
+                  for date in dates]
+    if missing_session:
+        position = dates.get_loc(pd.Timestamp("2020-01-07"))
+        timestamps.pop(position)
+        for values in quote.values(): values.pop(position)
+        adjusted.pop(position)
+    if future_marker:
+        quote["close"][-1] = "UNREAD_FUTURE_QUOTE"
+    payload = {"chart": {"error": None, "result": [{
+        "meta": {"exchangeTimezoneName": "America/New_York"}, "timestamp": timestamps,
+        "indicators": {"quote": [quote], "adjclose": [{"adjclose": adjusted}]}}]}}
+    snapshot = root / "data/raw/NVDA_yahoo_snapshot.json"
+    snapshot.write_text(json.dumps(payload))
+    digest = hashlib.sha256(snapshot.read_bytes()).hexdigest()
+    acquisition = {"retrieved_at_utc": "2020-02-01T00:00:00+00:00", "series": {
+        "NVDA": {"sha256": digest}}}
+    (root / "docs/data_verification.json").write_text(json.dumps(acquisition))
+    return root, config, digest
+
+
+@pytest.mark.parametrize("end", ["2020-01-01", "2020-01-11", "2020-01-17"])
+def test_stage_refuses_outside_development_before_io(tmp_path, monkeypatch, end):
+    runner = stage_runner()
+    monkeypatch.setattr(runner, "ROOT", tmp_path / "no_files_exist")
+    def forbidden(*args, **kwargs): raise AssertionError("Bounds must be checked before source access")
+    monkeypatch.setattr(runner, "snapshot_provenance", forbidden)
+    monkeypatch.setattr(runner, "load_yahoo_snapshot", forbidden)
+    config = dict(start="2020-01-02", validation_end="2020-01-10", target_ticker="NVDA")
+    with pytest.raises(ValueError, match="development interval"):
+        runner.load_stage(config, end)
+
+
+def test_stage_bounds_real_loader_and_preserves_series_contract(tmp_path, monkeypatch):
+    import market_forecasting.data as data_module
+    root, config, digest = stage_repository(tmp_path, future_marker=True)
+    runner = stage_runner()
+    monkeypatch.setattr(runner, "ROOT", root)
+    loader, decoder = runner.load_yahoo_snapshot, data_module._number
+    bounds, numeric_fields = [], []
+    def bounded_loader(path, *, start, end):
+        bounds.append((start, end))
+        return loader(path, start=start, end=end)
+    def selected_number(token, key):
+        assert b"UNREAD_FUTURE_QUOTE" not in token
+        numeric_fields.append(key)
+        return decoder(token, key)
+    monkeypatch.setattr(runner, "load_yahoo_snapshot", bounded_loader)
+    monkeypatch.setattr(data_module, "_number", selected_number)
+    close, actual_digest = runner.load_stage(config, config["validation_end"])
+    expected = pd.Series(np.arange(11., 18.),
+        index=pd.bdate_range("2020-01-02", "2020-01-10").as_unit("s"), dtype=float)
+    pd.testing.assert_series_equal(close, expected, check_freq=False)
+    assert actual_digest == digest
+    assert bounds == [("2020-01-02", "2020-01-10")]
+    assert sum(key != "timestamp" for key in numeric_fields) == 7 * 6
+    assert close.name is None and close.index.name is None
+
+
+def test_stage_refuses_changed_snapshot_before_quote_loading(tmp_path, monkeypatch):
+    root, config, _ = stage_repository(tmp_path)
+    snapshot = root / "data/raw/NVDA_yahoo_snapshot.json"
+    snapshot.write_text(snapshot.read_text() + " ")
+    runner = stage_runner()
+    monkeypatch.setattr(runner, "ROOT", root)
+    def forbidden(*args, **kwargs): raise AssertionError("Identity must be checked before quote loading")
+    monkeypatch.setattr(runner, "load_yahoo_snapshot", forbidden)
+    with pytest.raises(ValueError, match="Checksum mismatch"):
+        runner.load_stage(config, config["validation_end"])
+
+
+def test_stage_refuses_missing_session(tmp_path, monkeypatch):
+    root, config, _ = stage_repository(tmp_path, missing_session=True)
+    runner = stage_runner()
+    monkeypatch.setattr(runner, "ROOT", root)
+    with pytest.raises(ValueError, match="calendar coverage"):
+        runner.load_stage(config, config["validation_end"])
+
+
+@pytest.mark.parametrize("fault", ["unexpected", "duplicate_dates", "ordered"])
+def test_stage_refuses_other_calendar_defects(tmp_path, monkeypatch, fault):
+    root, config, _ = stage_repository(tmp_path)
+    runner = stage_runner()
+    monkeypatch.setattr(runner, "ROOT", root)
+    audit = {"missing": [], "unexpected": [], "duplicate_dates": 0, "ordered": True}
+    audit[fault] = {"unexpected": ["2020-01-04"], "duplicate_dates": 1, "ordered": False}[fault]
+    monkeypatch.setattr(runner, "audit_sessions", lambda *args, **kwargs: audit)
+    with pytest.raises(ValueError, match="calendar coverage"):
+        runner.load_stage(config, config["validation_end"])

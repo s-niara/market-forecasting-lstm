@@ -520,6 +520,7 @@ def test_hash_mismatch_stops_before_artifact_loading(monkeypatch, tmp_path):
 
 def test_evaluation_command_stops_before_runtime_or_source_access(monkeypatch):
     runner = final_runner(monkeypatch)
+    monkeypatch.setattr(runner, 'INDEPENDENT_EVALUATION_AUTHORISED', False)
     monkeypatch.setattr(runner, 'configure_runtime', forbidden_computation)
     monkeypatch.setattr(runner, 'approved_configuration', forbidden_computation)
     monkeypatch.setattr(sys, 'argv', ['run_final_training.py', 'evaluate'])

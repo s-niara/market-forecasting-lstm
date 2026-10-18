@@ -166,6 +166,7 @@ def test_explicit_history_boundary_retains_default_development_behavior():
 
 def test_sealed_commands_refuse_before_runtime_or_model_access(monkeypatch):
     runner=runner_module(monkeypatch)
+    monkeypatch.setattr(runner,'INDEPENDENT_EVALUATION_AUTHORISED',False)
     def forbidden(*args,**kwargs):raise AssertionError('Sealed command accessed the evaluation pipeline')
     monkeypatch.setattr(runner,'configure_runtime',forbidden)
     monkeypatch.setattr(runner,'frozen_evaluation_context',forbidden)
@@ -292,3 +293,30 @@ def test_synthetic_evaluation_records_forecasts_before_quote_decoding(monkeypatc
     output=tmp_path/settings['output_directory']
     assert sorted(p.name for p in output.iterdir())==['evaluation.json','source.zip']
     with pytest.raises(ValueError,match='already exists'):runner.run_independent_evaluation(settings)
+
+
+@pytest.mark.parametrize('code_gate,config_gate', [(False,False),(False,True),(True,False),(True,True)])
+def test_independent_release_requires_both_controls(monkeypatch,code_gate,config_gate):
+    runner=runner_module(monkeypatch)
+    monkeypatch.setattr(runner,'INDEPENDENT_EVALUATION_AUTHORISED',code_gate)
+    if code_gate and config_gate:
+        runner.require_evaluation_authorisation({'execution_authorised':config_gate})
+    else:
+        with pytest.raises(SystemExit,match='sealed'):
+            runner.require_evaluation_authorisation({'execution_authorised':config_gate})
+
+
+def test_record_preserves_absolute_errors_without_changing_signed_errors(monkeypatch):
+    runner=runner_module(monkeypatch)
+    table=synthetic_table(30)
+    settings=runner.evaluation_configuration()
+    monkeypatch.setattr(runner,'evaluation_source_identity',lambda:{'revision':'synthetic'})
+    manifest={'source':{'revision':'synthetic','source_archive':'source.zip'},
+              'artifacts_sha256':{'source.zip':'synthetic'},'snapshot_sha256':{}}
+    observations=[{'NVDA':float(x),'SPY':100.,'XLK':100.} for x in table.actual_close]
+    record=runner.evaluation_record(table,observations,settings,manifest,scope='pretest_machinery_check')
+    for i,row in enumerate(record['rows']):
+        for name in FORECAST_COLUMNS:
+            expected=float(table[name].iloc[i]-table.actual_close.iloc[i])
+            assert row['errors'][name]==expected
+            assert row['absolute_errors'][name]==abs(expected)

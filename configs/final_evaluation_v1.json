@@ -1,7 +1,7 @@
 {
   "version": 1,
   "experiment": "milestone_7_independent_evaluation",
-  "execution_authorised": false,
+  "execution_authorised": true,
   "frozen_manifest_sha256": "e2a46cc211c393b197f67f275ea214dabc7fd67a74dae90401be9e5ec2bd88dc",
   "protocol": {
     "test_start": "2025-01-01",
@@ -88,5 +88,144 @@
     2026
   ],
   "output_directory": "artifacts/final_evaluation_v1",
-  "dry_run_sessions": 30
+  "dry_run_sessions": 30,
+  "release_authorisation": {
+    "request": "NIT3251 \u2014 Milestone 8A: Independent 2025 Forecasting Evaluation",
+    "authorisation_quote": "I explicitly authorise the independent 2025 evaluation using the frozen methodology described below.",
+    "authorised_by": "Repository owner, explicit instruction in the project conversation",
+    "first_authorised_test_release": true,
+    "activated_at_utc": "2026-10-18T23:37:07.265078+00:00",
+    "committed_pretest_revision": "dc56f099342218a64b87439bb98c3f6a110d1326",
+    "controls": {
+      "scripts/run_final_training.py:INDEPENDENT_EVALUATION_AUTHORISED": true,
+      "configs/final_evaluation_v1.json:execution_authorised": true
+    },
+    "scope": "One independent evaluation of the frozen five-family comparison; no fitting, tuning, model selection or Notebook 06.",
+    "pre_release_verification": {
+      "status": "passed",
+      "verified_at_utc": "2026-10-18T23:35:59.521535+00:00",
+      "independent_process": true,
+      "process_id": 28148,
+      "lstm_checks": [
+        {
+          "identity": "A_seed_42",
+          "seed": 42,
+          "status": "passed",
+          "reload_max_absolute_difference": 0.0,
+          "features": 1,
+          "parameters": 1169,
+          "epochs": 19,
+          "optimizer_steps": 1463
+        },
+        {
+          "identity": "A_seed_123",
+          "seed": 123,
+          "status": "passed",
+          "reload_max_absolute_difference": 0.0,
+          "features": 1,
+          "parameters": 1169,
+          "epochs": 19,
+          "optimizer_steps": 1463
+        },
+        {
+          "identity": "A_seed_2026",
+          "seed": 2026,
+          "status": "passed",
+          "reload_max_absolute_difference": 0.0,
+          "features": 1,
+          "parameters": 1169,
+          "epochs": 19,
+          "optimizer_steps": 1463
+        },
+        {
+          "identity": "B_seed_42",
+          "seed": 42,
+          "status": "passed",
+          "reload_max_absolute_difference": 0.0,
+          "features": 8,
+          "parameters": 1617,
+          "epochs": 19,
+          "optimizer_steps": 1463
+        },
+        {
+          "identity": "B_seed_123",
+          "seed": 123,
+          "status": "passed",
+          "reload_max_absolute_difference": 0.0,
+          "features": 8,
+          "parameters": 1617,
+          "epochs": 19,
+          "optimizer_steps": 1463
+        },
+        {
+          "identity": "B_seed_2026",
+          "seed": 2026,
+          "status": "passed",
+          "reload_max_absolute_difference": 0.0,
+          "features": 8,
+          "parameters": 1617,
+          "epochs": 19,
+          "optimizer_steps": 1463
+        },
+        {
+          "identity": "C_seed_42",
+          "seed": 42,
+          "status": "passed",
+          "reload_max_absolute_difference": 0.0,
+          "features": 10,
+          "parameters": 1745,
+          "epochs": 19,
+          "optimizer_steps": 1463
+        },
+        {
+          "identity": "C_seed_123",
+          "seed": 123,
+          "status": "passed",
+          "reload_max_absolute_difference": 0.0,
+          "features": 10,
+          "parameters": 1745,
+          "epochs": 19,
+          "optimizer_steps": 1463
+        },
+        {
+          "identity": "C_seed_2026",
+          "seed": 2026,
+          "status": "passed",
+          "reload_max_absolute_difference": 0.0,
+          "features": 10,
+          "parameters": 1745,
+          "epochs": 19,
+          "optimizer_steps": 1463
+        }
+      ],
+      "arima_restored_state_exact": true,
+      "arima_fixed_parameter_continuation": true,
+      "pretest_sequence": [
+        {
+          "origin_date": "2024-12-27",
+          "target_date": "2024-12-30",
+          "forecast_count": 11,
+          "observed_after_forecast": true
+        },
+        {
+          "origin_date": "2024-12-30",
+          "target_date": "2024-12-31",
+          "forecast_count": 11,
+          "observed_after_forecast": true
+        }
+      ],
+      "pretest_checks_are_accuracy_evidence": false,
+      "frozen_weights_scalers": true,
+      "historical_feature_continuity": true,
+      "development_artifacts_unchanged": true,
+      "test_observations_decoded": false,
+      "test_forecasts_generated": false
+    },
+    "pre_release_tests": {
+      "passed": 241,
+      "warnings": 20,
+      "warnings_description": "Existing Keras/NumPy serialization deprecations"
+    },
+    "release_only_changes": "Enable both controls; persist absolute errors and execution timestamps; isolate sealed-state unit tests and check the two-control truth table. Forecasting and statistical algorithms are unchanged."
+  }
 }

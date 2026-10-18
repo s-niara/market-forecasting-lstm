@@ -1,4 +1,4 @@
-"""Fit, independently verify and freeze pre-test models; test evaluation stays sealed."""
+"""Fit and freeze pre-test models, then evaluate only through explicit release controls."""
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -32,8 +32,8 @@ PROTOCOL_PATH = ROOT / "configs/final_training_v1.json"
 SEALED_BOUNDARY = pd.Timestamp("2024-12-31")
 FROZEN_MANIFEST_SHA256 = "e2a46cc211c393b197f67f275ea214dabc7fd67a74dae90401be9e5ec2bd88dc"
 EVALUATION_CONFIG_PATH = ROOT / "configs/final_evaluation_v1.json"
-# Opening the real test period requires an explicit later authorisation change.
-INDEPENDENT_EVALUATION_AUTHORISED = False
+# Milestone 8A explicitly authorises independent evaluation of the frozen methodology.
+INDEPENDENT_EVALUATION_AUTHORISED = True
 
 
 def now():
@@ -594,7 +594,8 @@ def evaluation_record(table, observations, settings, manifest, *, scope):
         rows.append({"origin_date": str(row.origin_date.date()), "target_date": str(row.target_date.date()),
                      "origin_close": float(row.origin_close), "observed_close": observations[i],
                      "predictions": {name: float(row[name]) for name in FORECAST_COLUMNS},
-                     "errors": {name: float(errors[name].iloc[i]) for name in FORECAST_COLUMNS}})
+                     "errors": {name: float(errors[name].iloc[i]) for name in FORECAST_COLUMNS},
+                     "absolute_errors": {name: float(abs(errors[name].iloc[i])) for name in FORECAST_COLUMNS}})
     from market_forecasting.evaluation_plots import select_forecast_examples
     return {"version": 1, "status": "verified", "scope": scope, "recorded_at_utc": now(),
             "configuration": settings, "configuration_sha256": sha256(EVALUATION_CONFIG_PATH),
@@ -667,7 +668,8 @@ def run_independent_evaluation(settings):
         for relative in implementation["source_sha256"]:
             archive.write(ROOT / relative, relative)
     source_digest = sha256(output / "source.zip")
-    record = {"status": "started", "scope": "independent_test", "started_at_utc": now(),
+    started_at = now()
+    record = {"status": "started", "scope": "independent_test", "started_at_utc": started_at,
               "configuration": settings, "training_manifest_sha256": settings["frozen_manifest_sha256"],
               "evaluation_implementation": implementation, "evaluation_source_archive_sha256": source_digest, "rows": []}
     write_json(path, record)
@@ -700,6 +702,8 @@ def run_independent_evaluation(settings):
                 "Evaluation implementation changed during execution")
         record["evaluation_implementation"] = implementation
         record["evaluation_source_archive_sha256"] = source_digest
+        record["execution"] = {"started_at_utc": started_at, "completed_at_utc": now(),
+                               "target_count": len(table), "forecast_count": len(table) * len(FORECAST_COLUMNS)}
         write_json(path, record)
     except Exception as error:
         record.update(status="failed", error=f"{type(error).__name__}: {error}", traceback=traceback.format_exc())

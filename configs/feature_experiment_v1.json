@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "experiment": "milestone_6_controlled_features",
+  "seeds": [
+    42,
+    123,
+    2026
+  ],
+  "lookback": 30,
+  "epochs": 19,
+  "units": 16,
+  "dropout": 0.2,
+  "learning_rate": 0.001,
+  "batch_size": 32,
+  "optimizer": "Adam",
+  "loss": "standardised_correction_mse",
+  "formulation": "residual_dollar_correction",
+  "early_stopping": false,
+  "warmup_rows": 49,
+  "sma": [
+    20,
+    50
+  ],
+  "ema": [
+    12,
+    26
+  ],
+  "rsi": 14,
+  "macd": [
+    12,
+    26,
+    9
+  ],
+  "variants": {
+    "A": [
+      "close"
+    ],
+    "B": [
+      "close",
+      "sma20_distance",
+      "sma50_distance",
+      "ema12_distance",
+      "ema26_distance",
+      "rsi14_fraction",
+      "macd_relative",
+      "histogram_relative"
+    ],
+    "C": [
+      "close",
+      "sma20_distance",
+      "sma50_distance",
+      "ema12_distance",
+      "ema26_distance",
+      "rsi14_fraction",
+      "macd_relative",
+      "histogram_relative",
+      "spy_log_return",
+      "xlk_log_return"
+    ]
+  }
+}

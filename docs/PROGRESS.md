@@ -1,6 +1,6 @@
 # Project progress
 
-Last updated: 17 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Implementation and verification are tracked separately.
+Last updated: 18 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Implementation and verification are tracked separately.
 
 ## Status overview
 | Milestone | Implementation | Verification |
@@ -10,7 +10,7 @@ Last updated: 17 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 | 3. Dataset construction | Complete for price-only inputs | Bounded loading, window alignment, input contracts and leakage checks passed |
 | 4. Baselines | Naive and ARIMA implemented | Recorded forecasts preserved; Notebook 02 metrics and alignment verified |
 | 5. Stock-only LSTM | Complete; 15/15 fits | 123 tests; 15-checkpoint inference, scaling and executed notebook verified |
-| 6. Controlled feature experiments | Complete; 9/9 fits | 35 tests, shared dates, checkpoint reloads and notebook verified |
+| 6. Controlled feature experiments | Complete; 9/9 fits | 132 tests; nine-checkpoint inference, feature arithmetic, common samples and executed notebook verified |
 | 7. Final evaluation | Not started; reserved | No test forecast evaluation |
 | 8. Presentation and delivery | Not started; supporting notes exist | Delivery verification outstanding |
 
@@ -145,6 +145,9 @@ Last updated: 17 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 - [x] Complete three variants × three paired seeds at 19 fixed epochs.
 - [x] Save per-run and aggregate results, annual metrics, paired differences and visualisations.
 - [x] Verify saved checkpoints, experiment provenance, preserved Milestone 5 evidence and notebook execution.
+- [x] Demonstrate indicator mathematics, real feature matrices, scaling and complete three-model inference in Notebook 05.
+- [x] Verify feature ordering, shared input channels, causal prefix calculations and fixed-specification preflight rejection.
+- [x] Interpret paired and annual results, feature redundancy, effective historical context and changing dollar scale.
 
 **Objective/deliverables:** controlled comparison of price-only, technical-indicator and market-context residual LSTMs, plus interpretable feature visualisations.
 
@@ -154,7 +157,11 @@ Last updated: 17 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 **Verification, 16 October 2026:** 35 tests passed, with five existing Keras/NumPy serialization deprecation warnings. Indicator seeds, first-valid dates, common eligibility, scaling and future perturbations are tested. All nine checkpoints reproduced predictions exactly, with 19 epochs and no validation monitoring. Ten training-source hashes and configuration hashes matched; dependency and snapshot checks passed. Notebook 05 executed six code cells without errors. The verification record confirms preservation of 74 protected files, including Milestone 5 evidence. No additional fitting or 2025 feature/evaluation work occurred. See [verification evidence](feature_verification_v1.json).
 
-**Limitations/next:** grouped comparisons do not identify individual indicator importance; three seeds and a fixed training budget limit generalisation. Input dimensions change parameter counts. Volume remains excluded. Final methodology awaits explicit approval before Milestone 7; no 2025 features or forecasts have been generated.
+**Verification, 18 October 2026:** all 18 Notebook 05 code cells execute in order in a fresh kernel, retaining 13 inline figures and no notebook errors or warnings. The full suite passes 132 tests with five existing Keras/NumPy serialization deprecation warnings. Independent arithmetic verifies SMA windows, arithmetic EMA initialisation, Wilder RSI and edge cases, MACD identities and log returns. Prefix and future-perturbation checks verify causal construction; declared feature ordering, identical shared channels, 1,964 unique fitting input rows, 1,935 fitting labels and all 502 validation targets are checked. All nine checkpoints reproduce saved forecasts within 5.0 × 10⁻¹¹ USD of rounded JSON values; parameter counts, fixed settings, epoch-19 training losses, individual/aggregate/annual metrics and paired differences agree. The runner rejects configuration metadata inconsistent with implemented fixed formulas before data access or training. No feature values, scaler parameters, predictions or experiment evidence are changed, and no additional research fits or reserved-period quote decoding occurs.
+
+**Analytical findings:** the seven technical features increase mean MAE by 0.014704 USD relative to the common-sample control. SPY/XLK decrease it by 0.001999 USD relative to B, with mixed seed and annual outcomes. Lower training losses for B/C do not yield better average validation accuracy. SMA20 and EMA12 distances have a fitting-row correlation of 0.957; relative MACD is algebraically determined by the two EMA distances. These findings describe redundancy, not individual importance or a reason to alter the fixed feature set. All calculations and interpretations are in [Notebook 05](../notebooks/05_feature_experiments.ipynb).
+
+**Limitations/next:** grouped comparisons do not identify individual indicator importance; three seeds and a fixed training budget limit generalisation. Input dimensions change parameter counts, and indicators carry history preceding the 30 supplied feature rows: SMA50 spans 79 underlying closes across a 30-row sequence, while recursive states retain older information. Volume remains excluded. A return-target formulation would require separately approved preprocessing and controlled experiments; no formulation change or additional fit is implied. Final methodology awaits explicit approval before Milestone 7; no 2025 features or forecasts have been generated.
 
 ## 7. Final evaluation
 

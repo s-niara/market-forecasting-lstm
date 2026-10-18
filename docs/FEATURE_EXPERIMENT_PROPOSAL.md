@@ -1,6 +1,6 @@
-# Milestone 6: proposed technical-feature experiments
+# Milestone 6: approved technical-feature experiments
 
-**Status: feature proposal awaiting approval. No indicator implementation is included.** The price-only residual LSTM is complete; see [Milestone 5](MILESTONE_5.md). Technical feature engineering remains a central research contribution. ARIMA is a separate statistical benchmark and does not replace these experiments.
+**Status: approved and executed on 15 October 2026.** This document records the agreed specification; [Milestone 6](MILESTONE_6.md) contains results and verification. The price-only residual LSTM is complete; see [Milestone 5](MILESTONE_5.md). Technical feature engineering remains a central research contribution. ARIMA is a separate statistical benchmark and does not replace these experiments.
 
 ## Candidate indicators and parameters
 All calculations use NVDA split-adjusted Close, denoted C(t), available after session t closes. These are fixed starting specifications, not validated optimal parameters. Periods count observed exchange sessions.
@@ -34,11 +34,11 @@ For RSI, define zero loss with positive gain as 100; zero gain with positive los
 
 SPY/XLK returns are proposed as log(C(t)/C(t-1)) on their frozen split-adjusted Close series, using the same session calendar. They are price-return context, not dividend-reinvested total returns. Both instruments contain NVDA; context is correlated and must not be described as independent information. Optional A + context would isolate market context without technical features, but is outside the initial three-run-family comparison.
 
-The same target, effective training examples, validation target dates, 30-session sequence length, network structure, optimiser, epoch limit, batch size and stopping protocol must be used across variants. Input dimensionality changes trainable parameter counts; record these counts rather than claiming identical model capacity. The LSTM architecture is a later design decision and is not fixed by this proposal.
+The same target, effective training examples, validation target dates, 30-session sequence length, network structure, optimiser, epoch limit, batch size and stopping protocol must be used across variants. Input dimensionality changes trainable parameter counts; record these counts rather than claiming identical model capacity. Equal sequence length does not imply equal underlying historical context: a sequence of 30 SMA50 values uses 79 source closes, and recursive EMA/RSI states retain earlier observations. The comparison therefore evaluates the full causal feature representation, including that historical summary, rather than isolating a transformation of the exact same 30 raw closes. Milestone 5 selected 16 LSTM units, post-LSTM dropout 0.2, Adam learning rate 0.001, batch size 32, 30-session lookback and 19 fixed fitting epochs. These settings are locked for all three variants; no per-variant early stopping or further tuning is permitted.
 
-Proposed stochastic repetitions: seeds 42, 123 and 2026, paired across variants. Report each run plus mean and standard deviation; do not select only the best seed. Use dollar MAE as the primary comparison and dollar RMSE as secondary, with aligned error plots and separate 2023/2024 summaries. A small numerical difference alone does not establish statistical significance.
+Approved stochastic repetitions: seeds 42, 123 and 2026, paired across variants. Report each run plus mean and standard deviation; do not select only the best seed. Use dollar MAE as the primary comparison and dollar RMSE as secondary, with aligned error plots and separate 2023/2024 summaries. A small numerical difference alone does not establish statistical significance.
 
-Architecture selection and early-stopping design follow the [Milestone 5 protocol](MILESTONE_5_DESIGN.md): fitting through 2021 and internal validation on 2022, followed by fitting through 2022 for external comparison. This supersedes the provisional three-fold tuning suggestion. The selected epoch budget and hyperparameters remain fixed across feature variants; no per-variant external-validation tuning is planned. Scalers and eligibility must be reconstructed for each fitting stage. The 2023–2024 period remains development comparison data and has already been examined for baselines; it is not an untouched final assessment.
+Architecture selection and early-stopping design follow the [Milestone 5 protocol](MILESTONE_5_DESIGN.md): fitting through 2021 and internal validation on 2022, followed by fitting through 2022 for external comparison. This supersedes the provisional three-fold tuning suggestion. The selected epoch budget and hyperparameters remain fixed across feature variants; no per-variant external-validation tuning is planned. Milestone 6 performs only three full-development fits per variant (nine runs total); it does not repeat internal selection. Fit fresh scalers and weights using the common eligible training examples through 2022. The 2023–2024 period remains development comparison data and has already been examined for baselines; it is not an untouched final assessment.
 
 Report naive and ARIMA scores alongside the variants on exactly the same validation target dates. The existing baselines retain their documented fitting procedures; do not rewrite earlier runs. If eligibility changes target dates, produce a separately labelled aligned comparison. ARIMA uses the full training history while LSTM examples use finite windows; disclose that distinction.
 
@@ -51,7 +51,7 @@ Freeze model and feature choices before the independent 2025 evaluation. Volume 
 - Verify date alignment, train-only scaler fitting and target inversion.
 - Verify identical eligible examples and paired seeds across the three variants.
 
-These checks and all feature computations remain planned, not executed.
+These checks and all nine fits are complete; see [Milestone 6](MILESTONE_6.md).
 
 ## Shared output formulation
 All three variants use the approved residual dollar-correction formulation: inverse-transform the predicted correction, then add the unscaled origin NVDA Close. Fit correction scaling on training targets only. This keeps the price evaluation objective and reconstruction identical across feature sets without adding runs to Milestone 5.

@@ -7,6 +7,7 @@ import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 
 from .dataset import build_development_dataset, error_metrics
+from .calendar import audit_sessions
 
 
 @dataclass
@@ -15,6 +16,102 @@ class ArimaExperiment:
     # One row per validation target, with actual Close and both forecasts.
     predictions: pd.DataFrame
     summary: dict
+
+
+
+def _fit_order(values, order, maxiter):
+    """Fit one no-drift specification using the established numerical settings."""
+    return ARIMA(values, order=order, trend="n",
+                 enforce_stationarity=True, enforce_invertibility=True).fit(
+                     method_kwargs={"maxiter": maxiter})
+
+
+def fit_fixed_order(training, order=(2, 1, 2), maxiter=500):
+    """Fit a frozen ARIMA order and reject invalid or nonconverged outcomes."""
+    values = np.asarray(training, dtype=float)
+    order = tuple(order)
+    if values.ndim != 1 or len(values) < 30 or not np.isfinite(values).all():
+        raise ValueError("At least 30 finite training prices are required")
+    if (len(order) != 3 or any(type(v) is not int or v < 0 for v in order)
+            or order[1] != 1):
+        raise ValueError("Fixed order must be nonnegative integer (p, 1, q)")
+    if type(maxiter) is not int or maxiter <= 0:
+        raise ValueError("maxiter must be a positive integer")
+    # This entry point fits exactly one prespecified order; no AIC search occurs.
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        fitted = _fit_order(values, order, maxiter)
+    converged = bool(fitted.mle_retvals.get("converged", False))
+    finite = bool(np.isfinite(fitted.aic) and np.isfinite(fitted.params).all()
+                  and np.isfinite(fitted.filter_results.filtered_state).all())
+    evidence = {"order": list(order), "trend": "n", "maxiter": maxiter,
+                "enforce_stationarity": True, "enforce_invertibility": True,
+                "training_rows": len(values), "converged": converged, "finite": finite,
+                "aic": float(fitted.aic) if np.isfinite(fitted.aic) else None,
+                "parameters": dict(zip(fitted.param_names, map(float, fitted.params))),
+                "warnings": sorted({str(w.message) for w in caught})}
+    if not converged or not finite:
+        raise RuntimeError(f"Fixed ARIMA fit failed verification: {evidence}")
+    return fitted, evidence
+
+
+def _session_date(value):
+    """Require an exchange-local, timezone-naive session label."""
+    date = pd.Timestamp(value)
+    if pd.isna(date) or date.tz is not None or date != date.normalize():
+        raise ValueError("Expected a timezone-naive session date at midnight")
+    return date
+
+
+class FrozenArima:
+    """Enforce forecast-then-observe sequencing with fixed fitted coefficients."""
+    def __init__(self, fitted, last_observed_date):
+        self.state = fitted
+        self.last_observed_date = _session_date(last_observed_date)
+        self.pending_target = None
+        self.parameters = np.asarray(fitted.params, dtype=float).copy()
+        if not np.isfinite(self.parameters).all():
+            raise ValueError("Nonfinite fitted ARIMA parameters")
+
+    def _check_parameters(self, state):
+        if not np.array_equal(np.asarray(state.params), self.parameters):
+            raise RuntimeError("Frozen ARIMA coefficients changed")
+
+    def forecast(self, origin_date, target_date):
+        """Issue one forecast without accepting the unknown target observation."""
+        origin, target = _session_date(origin_date), _session_date(target_date)
+        if target > pd.Timestamp("2024-12-31"):
+            raise ValueError("Independent test forecasts require separate authorisation")
+        if self.pending_target is not None:
+            raise ValueError("Observe the pending target before issuing another forecast")
+        if origin != self.last_observed_date or target <= origin:
+            raise ValueError("Forecast origin must equal the last observed session")
+        # A chronological gap is still invalid: each forecast must be one session ahead.
+        calendar = audit_sessions(pd.DatetimeIndex([origin, target]), origin, target, "NASDAQ")
+        if calendar["missing"] or calendar["unexpected"] or calendar["expected_sessions"] != 2:
+            raise ValueError("Forecast target must be the next NASDAQ session")
+        self._check_parameters(self.state)
+        prediction = np.asarray(self.state.forecast(steps=1), dtype=float).reshape(-1)
+        self._check_parameters(self.state)
+        if prediction.shape != (1,) or not np.isfinite(prediction).all():
+            raise RuntimeError("Nonfinite or invalid one-step ARIMA forecast")
+        self.pending_target = target
+        return float(prediction[0])
+
+    def observe(self, target_date, actual):
+        """Filter the just-forecast observation without re-estimating coefficients."""
+        target = _session_date(target_date)
+        if self.pending_target is None or target != self.pending_target:
+            raise ValueError("Observation must match an outstanding forecast target")
+        actual = np.asarray(actual, dtype=float)
+        if actual.ndim != 0 or not np.isfinite(actual) or actual <= 0:
+            raise ValueError("Observed Close must be a finite positive scalar")
+        self._check_parameters(self.state)
+        updated = self.state.extend([float(actual)])
+        self._check_parameters(self.state)
+        self._check_parameters(updated)
+        self.state, self.last_observed_date = updated, target
+        self.pending_target = None
 
 
 def select_training_model(training, orders, maxiter=500):
@@ -39,9 +136,7 @@ def select_training_model(training, orders, maxiter=500):
             try:
                 # Fit coefficients on the differenced price history, without drift.
                 # maxiter caps optimisation; a lower AIC need not improve forecasts.
-                fit = ARIMA(values, order=order, trend="n",
-                            enforce_stationarity=True, enforce_invertibility=True).fit(
-                                method_kwargs={"maxiter": maxiter})
+                fit = _fit_order(values, order, maxiter)
                 converged = bool(fit.mle_retvals.get("converged", False))
                 finite = bool(np.isfinite(fit.aic) and np.isfinite(fit.params).all())
                 record.update(converged=converged,

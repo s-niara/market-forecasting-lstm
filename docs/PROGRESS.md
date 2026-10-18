@@ -11,7 +11,7 @@ Last updated: 18 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 | 4. Baselines | Naive and ARIMA implemented | Recorded forecasts preserved; Notebook 02 metrics and alignment verified |
 | 5. Stock-only LSTM | Complete; 15/15 fits | 123 tests; 15-checkpoint inference, scaling and executed notebook verified |
 | 6. Controlled feature experiments | Complete; 9/9 fits | 132 tests; nine-checkpoint inference, feature arithmetic, common samples and executed notebook verified |
-| 7. Final evaluation | Not started; reserved | No test forecast evaluation |
+| 7. Final training and independent evaluation | 7A complete: one ARIMA and 9/9 LSTM fits frozen; test evaluation reserved | 206 tests; independent reload, scaler/state integrity and pre-test inference verified |
 | 8. Presentation and delivery | Not started; supporting notes exist | Delivery verification outstanding |
 
 ## 1. Repository foundation
@@ -161,19 +161,31 @@ Last updated: 18 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 **Analytical findings:** the seven technical features increase mean MAE by 0.014704 USD relative to the common-sample control. SPY/XLK decrease it by 0.001999 USD relative to B, with mixed seed and annual outcomes. Lower training losses for B/C do not yield better average validation accuracy. SMA20 and EMA12 distances have a fitting-row correlation of 0.957; relative MACD is algebraically determined by the two EMA distances. These findings describe redundancy, not individual importance or a reason to alter the fixed feature set. All calculations and interpretations are in [Notebook 05](../notebooks/05_feature_experiments.ipynb).
 
-**Limitations/next:** grouped comparisons do not identify individual indicator importance; three seeds and a fixed training budget limit generalisation. Input dimensions change parameter counts, and indicators carry history preceding the 30 supplied feature rows: SMA50 spans 79 underlying closes across a 30-row sequence, while recursive states retain older information. Volume remains excluded. A return-target formulation would require separately approved preprocessing and controlled experiments; no formulation change or additional fit is implied. Final methodology awaits explicit approval before Milestone 7; no 2025 features or forecasts have been generated.
+**Limitations/next:** grouped comparisons do not identify individual indicator importance; three seeds and a fixed training budget limit generalisation. Input dimensions change parameter counts, and indicators carry history preceding the 30 supplied feature rows: SMA50 spans 79 underlying closes across a 30-row sequence, while recursive states retain older information. Volume remains excluded. A return-target formulation would require separately approved preprocessing and controlled experiments; no formulation change or additional fit is implied. The approved final refitting and comparison protocol is recorded in Milestone 7 below; 2025 feature construction and forecasting remain sealed.
 
-## 7. Final evaluation
+## 7. Final training and independent evaluation
 
-- [ ] Freeze model selection and experiment settings.
-- [ ] Evaluate the reserved 2025 period after the freeze.
-- [ ] Verify final metrics and document error analysis and limitations.
+- [x] Freeze the five-family comparison and approved hyperparameters.
+- [x] Implement fit-only preparation, target-free origin transforms and frozen inference.
+- [x] Fit ARIMA(2,1,2) once on 2,516 permitted pre-test closes.
+- [x] Fit Models A/B/C with seeds 42, 123 and 2026: nine fresh 19-epoch fits.
+- [x] Independently reload all saved artifacts and freeze their integrity manifest.
+- [x] Predeclare evaluation timing, metrics, contrasts, uncertainty settings and examples.
+- [ ] Obtain separate authorisation for independent testing.
+- [ ] Activate and verify test-stage orchestration and create Notebook 06 after approval.
+- [ ] Evaluate the reserved 2025 period and document final errors and limitations.
 
-**Objective/deliverables:** frozen configuration, 2025 forecast evaluation, error analysis and limitations.
+**Objective/deliverables:** reproducible final fits on 2015–2024, immutable model/preprocessing evidence, and an independently authorised 2025 evaluation.
 
-**Completed/files/results:** test reservation is recorded in configuration and conventions; no final evaluation implementation or result.
+**Final fitting, 18 October 2026:** the bounded loader supplies 2,516 sessions from 2015-01-02 through 2024-12-31 for each instrument. The unchanged 49-row warm-up and 30-session lookback produce 2,437 common fitting targets, beginning 2015-04-28. Input scaling uses 2,466 unique feature rows from 2015-03-16 through 2024-12-30; correction scaling includes targets through 2024-12-31. Tensor shapes are `(2437,30,1)`, `(2437,30,8)` and `(2437,30,10)`. All nine fits completed 19 epochs and 1,463 Adam updates; parameter counts are 1,169/1,617/1,745. ARIMA converged with the frozen no-drift order, stationarity/invertibility constraints and 500-iteration limit. Fitting losses are retained in each history, without ranking or selecting seeds. No final-test accuracy result exists.
 
-**Outstanding/verification/next:** finish validation-based selection and record the freeze before accessing test forecast performance. Administrative snapshot checks are not test evaluation.
+**Files:** `configs/final_training_v1.json`, `scripts/run_final_training.py`, fit-only/origin preparation in `features.py`, frozen model interfaces in `arima.py` and `lstm.py`, benchmark-relative metrics in `dataset.py`, and `tests/test_final_training.py`. The local [manifest](../artifacts/final_training_v1/manifest.json) references the separate final checkpoints, three shared variant-specific preprocessing files, per-run histories/summaries, ARIMA state, exact source archive and [independent verification](../artifacts/final_training_v1/verification.json).
+
+**Verification:** 206 automated tests passed, with 20 known Keras/NumPy serialization deprecation warnings; dependency consistency passed. Synthetic checks cover missing/calendar-invalid history, feature order, invalid scalers, future perturbations, target-free inference, forecast-before-observation sequencing, unchanged coefficients/weights/scalers, metric definitions, protocol rejection and failure preservation. A fresh process reloaded all nine LSTM checkpoints and ARIMA state. Reconstructed preprocessing matches the saved statistics exactly; loaded predictions reproduce recorded pre-test checks within 1e-7 USD/standardised units, and repeated inference is identical. All models align on the two permitted continuation-check target dates, 2024-12-30 and 2024-12-31. These are machinery checks using final fitted parameters, not out-of-sample accuracy evidence. All historical artifacts, compact development records, locked notebooks and separate housekeeping changes remain unchanged. Twelve saved final-development checkpoints reproduce their recorded predictions within 5.0 × 10⁻¹¹ USD from JSON rounding.
+
+**Freeze identity:** `e2a46cc211c393b197f67f275ea214dabc7fd67a74dae90401be9e5ec2bd88dc` is the SHA-256 of the final manifest. The manifest records its source revision plus hashes and an archive of the actual uncommitted implementation, rather than claiming that the Git revision alone captures the fit. Artifact checksums are validated before model loading. Existing final destinations cannot be overwritten or silently resumed.
+
+**Outstanding/limitations:** 2025 remains sealed. The pre-test inference interfaces are verified; the independent evaluation loop, bootstrap reporting and Notebook 06 remain to be activated/implemented after authorisation. The approved five-family hierarchy, seed reporting and B−A/C−B contrasts cannot be changed in response to test outcomes. Model A is the primary LSTM, and persistence remains the essential benchmark. Training on more recent history reduces model age but does not establish improved generalisation. The return-target alternative is deferred. Local snapshots and artifacts require preservation because they are excluded from Git.
 
 ## 8. Presentation and delivery
 

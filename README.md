@@ -10,6 +10,19 @@ The target is Yahoo split-adjusted Close in USD. Volume features remain deferred
 ## Current implementation
 Frozen data, calendar auditing, price-only development windows and the naive validation baseline are implemented. ARIMA and the residual price-only LSTM are implemented. Fifteen LSTM fits selected configuration C; its mean validation MAE is 1.705023 USD, compared with 1.689494 USD for the naive benchmark. The subsequent common-warm-up feature comparison found no average improvement over price-only LSTM or naive; see [Milestone 6](docs/MILESTONE_6.md). No 2025 forecast performance has been evaluated. See the [LSTM results](docs/MILESTONE_5.md). See [implementation and verification status](docs/PROGRESS.md), the [roadmap](docs/PLAN.md) and the [benchmark summary](docs/MILESTONE_4.md).
 
+## Frozen final-training models
+The final specification uses naive persistence, ARIMA(2,1,2), primary price-only LSTM A, technical-indicator LSTM B and market-context LSTM C. One ARIMA and nine fresh LSTM fits were completed and frozen on 18 October 2026, using only 2015–2024 observations. All three LSTM variants share 2,437 fitting targets and fixed 19-epoch training. No test forecasts have been generated.
+
+The [final protocol](configs/final_training_v1.json) records the approved settings and future comparisons. The local [freeze manifest](artifacts/final_training_v1/manifest.json) binds model identities, configurations, scalers, source/data hashes, package versions and independently verified artifacts. See [final-stage progress](docs/PROGRESS.md#7-final-training-and-independent-evaluation) for verification evidence and limitations.
+
+```sh
+python scripts/run_final_training.py verify
+```
+
+Verification reloads the saved artifacts and uses only pre-test examples. The `fit` phase performs the single approved final-training experiment and refuses an existing destination; it is not a routine verification command. The `evaluate` phase fails closed. Activating independent testing requires separate approval and the remaining evaluation orchestration; Notebook 06 is not created.
+
+Final checkpoints, preprocessing and `source.zip` remain in `artifacts/final_training_v1/`, excluded from Git. Preserve this directory and the original snapshots for exact artifact reproduction. The source archive records the actual implementation used for fitting, including uncommitted code; the Git revision alone does not identify that implementation. Repeated inference is verified in the recorded environment; deterministic training settings do not guarantee bitwise agreement across different software or hardware.
+
 ## Installation
 Python 3.12 is the verified environment; package metadata permits Python 3.11–3.12, but that does not establish verification on both versions. Run from the repository root:
 

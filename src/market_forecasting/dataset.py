@@ -71,3 +71,17 @@ def error_metrics(actual, predicted) -> dict:
     errors=predicted-actual
     return {"n":int(len(actual)), "mae_usd":float(np.mean(np.abs(errors))),
             "rmse_usd":float(np.sqrt(np.mean(errors**2)))}
+
+
+def benchmark_relative_metrics(actual, predicted, naive) -> dict:
+    """Compare aligned USD errors with persistence; positive skill indicates improvement."""
+    model_metrics = error_metrics(actual, predicted)
+    naive_metrics = error_metrics(actual, naive)
+    absolute_skill, percentage_skill = {}, {}
+    for label, key in (("mae", "mae_usd"), ("rmse", "rmse_usd")):
+        baseline, model = naive_metrics[key], model_metrics[key]
+        absolute_skill[label] = baseline - model
+        # Perfect persistence has no denominator for percentage skill.
+        percentage_skill[label] = 100 * (1 - model / baseline) if baseline else None
+    return {"model": model_metrics, "naive": naive_metrics,
+            "absolute_skill_usd": absolute_skill, "percentage_skill": percentage_skill}

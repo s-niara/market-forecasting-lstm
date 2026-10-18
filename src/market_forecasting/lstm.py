@@ -2,8 +2,10 @@
 import json
 import os
 import time
+from zipfile import ZipFile
 from pathlib import Path
 import numpy as np
+from .preprocessing import reconstruct_prices
 
 # CPU execution avoids switching numerical backends between paired experiments.
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
@@ -39,6 +41,84 @@ def predict_standardised(model, X, batch_size=512):
     """Predict corrections in inference mode without changing model state."""
     return np.concatenate([np.asarray(model(X[i:i + batch_size], training=False)).reshape(-1)
                            for i in range(0, len(X), batch_size)]).astype(float)
+
+
+
+def load_frozen_model(path, feature_names, settings, lookback=30):
+    """Load an inference-only checkpoint after verifying its frozen specification."""
+    names = list(feature_names)
+    if not names or len(set(names)) != len(names) or not all(isinstance(v, str) and v.strip() for v in names):
+        raise ValueError("Feature names must be nonempty, unique strings in saved order")
+    # compile=False avoids restoring a training workflow; inspect the saved compile
+    # metadata first so an incompatible optimiser or loss cannot pass unnoticed.
+    with ZipFile(path) as archive:
+        saved = json.loads(archive.read("config.json"))
+    compiled = saved.get("compile_config", {})
+    optimizer = compiled.get("optimizer") or {}
+    optimizer_config = optimizer.get("config", {})
+    if (optimizer.get("class_name") != "Adam"
+            or compiled.get("loss") != "mean_squared_error"
+            or not np.isclose(optimizer_config.get("learning_rate", np.nan),
+                              settings["learning_rate"], rtol=1e-6, atol=0)):
+        raise ValueError("Saved optimiser, learning rate or loss differs from frozen settings")
+    expected_optimizer = tf.keras.optimizers.Adam(
+        learning_rate=settings["learning_rate"]).get_config()
+    for key, expected in expected_optimizer.items():
+        if key not in {"name", "learning_rate"} and optimizer_config.get(key) != expected:
+            raise ValueError(f"Saved Adam setting differs from the implementation: {key}")
+    model = tf.keras.models.load_model(path, compile=False, safe_mode=True)
+    if tuple(model.input_shape) != (None, lookback, len(names)) or tuple(model.output_shape) != (None, 1):
+        raise ValueError("Checkpoint input/output dimensions differ from frozen features")
+    layers = model.layers
+    if (len(layers) != 3 or not isinstance(layers[0], tf.keras.layers.LSTM)
+            or not isinstance(layers[1], tf.keras.layers.Dropout)
+            or not isinstance(layers[2], tf.keras.layers.Dense)):
+        raise ValueError("Checkpoint must contain LSTM, Dropout and Dense layers")
+    recurrent, dropout, output = (layer.get_config() for layer in layers)
+    if (recurrent["units"] != settings["units"] or recurrent["stateful"]
+            or recurrent["return_sequences"] or recurrent["return_state"]
+            or recurrent["go_backwards"] or recurrent["activation"] != "tanh"
+            or recurrent["recurrent_activation"] != "sigmoid"
+            or recurrent["dropout"] != 0 or recurrent["recurrent_dropout"] != 0
+            or not recurrent["use_bias"] or not recurrent["unit_forget_bias"]
+            or dropout["rate"] != settings["dropout"]
+            or output["units"] != 1 or output["activation"] != "linear"
+            or not output["use_bias"]):
+        raise ValueError("Checkpoint layer settings differ from the frozen architecture")
+    units = settings["units"]
+    expected_parameters = 4 * units * (len(names) + units + 1) + units + 1
+    if (model.count_params() != expected_parameters
+            or not all(np.isfinite(value).all() for value in model.get_weights())):
+        raise ValueError("Checkpoint parameters are nonfinite or have an invalid count")
+    return model
+
+
+def frozen_forecast(model, X, origins, correction_scaler):
+    """Reconstruct USD forecasts while checking that inference preserves fitted state."""
+    X, origins = np.asarray(X), np.asarray(origins, dtype=float)
+    if (X.ndim != 3 or not len(X) or tuple(X.shape[1:]) != tuple(model.input_shape[1:])
+            or origins.shape != (len(X),) or not np.isfinite(X).all()
+            or not np.isfinite(origins).all() or not (origins > 0).all()):
+        raise ValueError("Finite aligned input windows and positive origin prices are required")
+    scaler_before = (correction_scaler.mean, correction_scaler.scale)
+    if not np.isfinite(scaler_before).all() or correction_scaler.scale <= 0:
+        raise ValueError("Correction scaler must have finite mean and positive scale")
+    weights_before = [value.copy() for value in model.get_weights()]
+    standardised = predict_standardised(model, X)
+    # The target Close is deliberately absent; only the known origin is added.
+    correction = correction_scaler.inverse_transform(standardised)
+    prediction = reconstruct_prices(origins, standardised, correction_scaler)
+    weights_after = model.get_weights()
+    if (len(weights_before) != len(weights_after)
+            or any(not np.array_equal(a, b) for a, b in zip(weights_before, weights_after))):
+        raise RuntimeError("Frozen LSTM weights changed during inference")
+    if scaler_before != (correction_scaler.mean, correction_scaler.scale):
+        raise RuntimeError("Frozen correction scaler changed during inference")
+    if (standardised.shape != origins.shape or not np.isfinite(standardised).all()
+            or not np.isfinite(correction).all() or not np.isfinite(prediction).all()):
+        raise RuntimeError("Nonfinite or misaligned LSTM forecast")
+    return {"standardised_correction": standardised,
+            "correction_usd": correction, "prediction": prediction}
 
 
 class EarlyStopState:

@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "experiment": "milestone_7a_final_pretest_fit",
+  "phase": "fit_and_freeze",
+  "data": {
+    "start": "2015-01-01",
+    "fit_end": "2024-12-31",
+    "target_ticker": "NVDA",
+    "context_tickers": [
+      "SPY",
+      "XLK"
+    ],
+    "price_convention": "split_adjusted_close",
+    "target_column": "close",
+    "forecast_horizon_trading_days": 1,
+    "calendars": {
+      "NVDA": "NASDAQ",
+      "SPY": "NYSE",
+      "XLK": "NYSE"
+    },
+    "expected_sessions": 2516,
+    "snapshot_policy": "existing_frozen_snapshots_only",
+    "bounded_quote_decoding_required": true
+  },
+  "common_eligibility": {
+    "warmup_rows": 49,
+    "lookback": 30,
+    "expected_fit_examples": 2437,
+    "expected_unique_input_rows": 2466,
+    "expected_first_feature_date": "2015-03-16",
+    "expected_first_target_date": "2015-04-28",
+    "expected_last_fitting_input_date": "2024-12-30",
+    "expected_last_fitting_target_date": "2024-12-31",
+    "input_scaling": "unique_fitting_input_observations_population_standard_deviation",
+    "target_scaling": "fitting_dollar_corrections_population_standard_deviation",
+    "constant_series_scale": 1.0,
+    "include_last_target_in_input_scaler": false
+  },
+  "arima": {
+    "order": [
+      2,
+      1,
+      2
+    ],
+    "trend": "n",
+    "enforce_stationarity": true,
+    "enforce_invertibility": true,
+    "maxiter": 500,
+    "order_search": false,
+    "expected_fitting_observations": 2516,
+    "test_coefficients": "fixed",
+    "state_update": "forecast_then_extend_observed_target_without_refit"
+  },
+  "lstm": {
+    "lookback": 30,
+    "units": 16,
+    "dropout": 0.2,
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "batch_size": 32,
+    "epochs": 19,
+    "seeds": [
+      42,
+      123,
+      2026
+    ],
+    "expected_fits": 9,
+    "formulation": "residual_dollar_correction",
+    "loss": "standardised_correction_mse",
+    "reconstruction": "origin_close_plus_inverse_standardised_correction",
+    "fresh_initialisation": true,
+    "batch_order": "chronological",
+    "early_stopping": false,
+    "internal_validation": false,
+    "feature_names": {
+      "A": [
+        "close"
+      ],
+      "B": [
+        "close",
+        "sma20_distance",
+        "sma50_distance",
+        "ema12_distance",
+        "ema26_distance",
+        "rsi14_fraction",
+        "macd_relative",
+        "histogram_relative"
+      ],
+      "C": [
+        "close",
+        "sma20_distance",
+        "sma50_distance",
+        "ema12_distance",
+        "ema26_distance",
+        "rsi14_fraction",
+        "macd_relative",
+        "histogram_relative",
+        "spy_log_return",
+        "xlk_log_return"
+      ]
+    },
+    "expected_parameters": {
+      "A": 1169,
+      "B": 1617,
+      "C": 1745
+    },
+    "expected_optimizer_steps_per_epoch": 77,
+    "expected_optimizer_steps": 1463,
+    "feature_specification": {
+      "sma": [
+        20,
+        50
+      ],
+      "ema": [
+        12,
+        26
+      ],
+      "rsi": 14,
+      "macd": [
+        12,
+        26,
+        9
+      ]
+    },
+    "indicator_initialisation": "existing_arithmetic_ema_seed_and_wilder_rsi",
+    "test_weights": "fixed",
+    "test_scalers": "fixed"
+  },
+  "comparison": {
+    "families": [
+      "naive",
+      "ARIMA",
+      "A",
+      "B",
+      "C"
+    ],
+    "primary_lstm": "A",
+    "benchmarks": [
+      "naive",
+      "ARIMA"
+    ],
+    "feature_ablations": [
+      [
+        "B",
+        "A"
+      ],
+      [
+        "C",
+        "B"
+      ]
+    ],
+    "milestone_5_separate_final_refit": false,
+    "prediction_ensemble": false,
+    "paired_error_comparisons": [
+      [
+        "A",
+        "naive"
+      ],
+      [
+        "ARIMA",
+        "naive"
+      ],
+      [
+        "B",
+        "A"
+      ],
+      [
+        "C",
+        "B"
+      ]
+    ],
+    "aggregate": "arithmetic_mean_of_individual_seed_metrics",
+    "seed_variability": "sample_standard_deviation_ddof_1"
+  },
+  "evaluation_protocol": {
+    "test_start": "2025-01-01",
+    "test_end": "2025-12-31",
+    "expected_calendar_sessions": 250,
+    "test_sealed": true,
+    "test_access_authorised": false,
+    "execution_authorised": false,
+    "flow": "forecast_then_observe_then_update_history",
+    "retain_pretest_indicator_history": true,
+    "retain_pretest_input_context": true,
+    "primary_metric": "mae_usd",
+    "secondary_metric": "rmse_usd",
+    "absolute_skill": "naive_error_minus_model_error",
+    "percentage_skill": "100_times_one_minus_model_error_over_naive_error",
+    "zero_naive_error_skill": null,
+    "bootstrap": {
+      "method": "paired_circular_block_bootstrap",
+      "metric": "mae_difference",
+      "primary_block_length": 10,
+      "sensitivity_block_lengths": [
+        5,
+        20
+      ],
+      "resamples": 5000,
+      "seed": 314159,
+      "interval_level": 0.95,
+      "purpose": "approximate_conditional_uncertainty_no_model_selection",
+      "resample_dates_jointly_across_models_and_seeds": true
+    },
+    "representative_seed": 42,
+    "illustrative_examples": {
+      "first_test_forecast": true,
+      "largest_naive_absolute_error_dates": 3,
+      "same_dates_for_all_models": true
+    }
+  },
+  "failure_policy": "stop_on_failed_fit_nonfinite_values_or_invariant_violation_no_replacement_runs",
+  "return_target_experiment": "deferred_not_authorised",
+  "artifacts": {
+    "directory": "artifacts/final_training_v1",
+    "overwrite_existing": false,
+    "independent_reload_verification_required": true,
+    "freeze_only_after_all_required_verification_passes": true
+  }
+}

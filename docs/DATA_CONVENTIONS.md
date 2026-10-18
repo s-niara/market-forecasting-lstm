@@ -10,14 +10,15 @@ Convert UTC timestamps to America/New_York before deriving daily session dates. 
 
 The [calendar audit](calendar_audit_2026-10-12.json), using `pandas-market-calendars==5.5.0`, finds 2,766 expected dates with no missing or unexpected sessions, duplicates or ordering defects. NVDA uses NASDAQ; SPY and XLK use NYSE regular-equity sessions as a proxy for NYSE Arca. This is a calendar-library check, not an exchange-certified audit. Cross-instrument alignment alone does not prove complete session coverage.
 
-The dataset builder assumes calendar coverage was audited separately; its ordering and numerical checks do not independently enforce exchange-session completeness.
+The development dataset builder assumes calendar coverage was audited separately; its ordering and numerical checks do not independently enforce exchange-session completeness. Final fit-only preparation and forecast-origin preparation additionally require complete exchange-session history.
 
 ## Forecast availability and temporal boundaries
 | Partition | Target-date interval | Permitted use |
 |---|---|---|
 | Training | 2015-01-01–2022-12-31 | Exploration, parameter fitting and transformation fitting |
 | Validation | 2023-01-01–2024-12-31 | Model comparison and bounded selection |
-| Final test | 2025-01-01–2025-12-31 | Evaluation after selection is frozen |
+| Final refit | 2015-01-01–2024-12-31 | Fit frozen specifications after development selection |
+| Final test | 2025-01-01–2025-12-31 | Evaluation only after artifact freeze and separate authorisation |
 
 The horizon is the next trading session, with the forecast formed after the origin session closes. All features must be available at that origin. Assign examples by target date. Input context may precede a partition boundary; future targets may not enter fitting.
 
@@ -55,3 +56,12 @@ Input standardisation uses unique observations occurring in fitting windows; cor
 
 ## Milestone 6 common feature eligibility
 The [approved indicator definitions](FEATURE_EXPERIMENT_PROPOSAL.md) are implemented with arithmetic EMA seeds and Wilder RSI. The first 49 rows remain missing; no backfill is used. All variants share the complete interval beginning 2015-03-16 and 30-session windows, yielding 1,935 fitting targets from 2015-04-28 and the original 502 validation dates. Fit each feature scaler on unique fitting input rows through 2022-12-29 and the common correction scaler on fitting labels through 2022-12-30. Continue feature states across boundaries without reinitialising them. Reject internal gaps and mismatched instrument sessions. No test-period features are computed. [Milestone 6](MILESTONE_6.md) records exact statistics and results.
+
+## Final fit-only preparation and frozen-origin inference
+Final fitting uses the unchanged snapshots and conventions over 2015-01-01–2024-12-31, yielding 2,516 observed sessions. All three LSTM variants retain the common 49-row warm-up: 2,437 target labels from 2015-04-28 through 2024-12-31 and 2,466 unique scaler-fitting input rows from 2015-03-16 through 2024-12-30. The last fitting target is not added to the input scaler. Each feature has its own population-standard-deviation scaler; all variants share the same fitted dollar-correction target statistics. No new validation partition is fabricated for final fitting.
+
+`prepare_final_feature_dataset()` reuses the existing feature/window construction with an all-fitting mask. `prepare_origin_input()` validates frozen feature ordering and scaler metadata, selects the observed prefix before numerical conversion, audits complete aligned sessions, and calls the authoritative indicator calculations. It returns one `(1,30,F)` tensor and the origin Close without requiring the next-session target. Recursive indicators retain their original seeds; passing only the last 30 raw closes is insufficient.
+
+The bounded loader never decodes quotes beyond 2024-12-31 during fit or verification. Origin and ARIMA sequencing interfaces are capped at pre-test dates until independent testing is authorised. Reload checks use origins no later than 2024-12-30; the final ARIMA state is inspected without issuing its next, reserved-period forecast. Synthetic checks and pre-test state continuation verify mechanics without constituting final accuracy evidence.
+
+Final artifacts bind scalers, feature names/order, target formulation, model state and source/data identities in the [freeze manifest](../artifacts/final_training_v1/manifest.json). Future rolling input updates and ARIMA state filtering must not update LSTM weights, fitted scalers or ARIMA coefficients. The expected 250 test sessions, common target dates and historical context will be verified only when evaluation is authorised.

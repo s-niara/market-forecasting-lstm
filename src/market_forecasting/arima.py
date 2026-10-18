@@ -65,9 +65,13 @@ def _session_date(value):
 
 class FrozenArima:
     """Enforce forecast-then-observe sequencing with fixed fitted coefficients."""
-    def __init__(self, fitted, last_observed_date):
+    def __init__(self, fitted, last_observed_date, *, permitted_end="2024-12-31"):
         self.state = fitted
         self.last_observed_date = _session_date(last_observed_date)
+        # An evaluation caller supplies its authorised boundary; the default stays pre-test.
+        self.permitted_end = _session_date(permitted_end)
+        if self.last_observed_date > self.permitted_end:
+            raise ValueError("ARIMA state extends beyond the permitted historical boundary")
         self.pending_target = None
         self.parameters = np.asarray(fitted.params, dtype=float).copy()
         if not np.isfinite(self.parameters).all():
@@ -80,8 +84,8 @@ class FrozenArima:
     def forecast(self, origin_date, target_date):
         """Issue one forecast without accepting the unknown target observation."""
         origin, target = _session_date(origin_date), _session_date(target_date)
-        if target > pd.Timestamp("2024-12-31"):
-            raise ValueError("Independent test forecasts require separate authorisation")
+        if target > self.permitted_end:
+            raise ValueError("Forecast exceeds its permitted boundary; later dates require separate authorisation")
         if self.pending_target is not None:
             raise ValueError("Observe the pending target before issuing another forecast")
         if origin != self.last_observed_date or target <= origin:

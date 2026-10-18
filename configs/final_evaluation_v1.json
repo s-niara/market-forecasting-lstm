@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "experiment": "milestone_7_independent_evaluation",
+  "execution_authorised": false,
+  "frozen_manifest_sha256": "e2a46cc211c393b197f67f275ea214dabc7fd67a74dae90401be9e5ec2bd88dc",
+  "protocol": {
+    "test_start": "2025-01-01",
+    "test_end": "2025-12-31",
+    "expected_calendar_sessions": 250,
+    "flow": "forecast_then_observe_then_update_history",
+    "retain_pretest_indicator_history": true,
+    "retain_pretest_input_context": true,
+    "primary_metric": "mae_usd",
+    "secondary_metric": "rmse_usd",
+    "absolute_skill": "naive_error_minus_model_error",
+    "percentage_skill": "100_times_one_minus_model_error_over_naive_error",
+    "zero_naive_error_skill": null,
+    "bootstrap": {
+      "method": "paired_circular_block_bootstrap",
+      "metric": "mae_difference",
+      "primary_block_length": 10,
+      "sensitivity_block_lengths": [
+        5,
+        20
+      ],
+      "resamples": 5000,
+      "seed": 314159,
+      "interval_level": 0.95,
+      "purpose": "approximate_conditional_uncertainty_no_model_selection",
+      "resample_dates_jointly_across_models_and_seeds": true
+    },
+    "representative_seed": 42,
+    "illustrative_examples": {
+      "first_test_forecast": true,
+      "largest_naive_absolute_error_dates": 3,
+      "same_dates_for_all_models": true
+    }
+  },
+  "comparison": {
+    "families": [
+      "naive",
+      "ARIMA",
+      "A",
+      "B",
+      "C"
+    ],
+    "primary_lstm": "A",
+    "benchmarks": [
+      "naive",
+      "ARIMA"
+    ],
+    "feature_ablations": [
+      [
+        "B",
+        "A"
+      ],
+      [
+        "C",
+        "B"
+      ]
+    ],
+    "milestone_5_separate_final_refit": false,
+    "prediction_ensemble": false,
+    "paired_error_comparisons": [
+      [
+        "A",
+        "naive"
+      ],
+      [
+        "ARIMA",
+        "naive"
+      ],
+      [
+        "B",
+        "A"
+      ],
+      [
+        "C",
+        "B"
+      ]
+    ],
+    "aggregate": "arithmetic_mean_of_individual_seed_metrics",
+    "seed_variability": "sample_standard_deviation_ddof_1"
+  },
+  "seeds": [
+    42,
+    123,
+    2026
+  ],
+  "output_directory": "artifacts/final_evaluation_v1",
+  "dry_run_sessions": 30
+}

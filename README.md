@@ -19,9 +19,17 @@ The [final protocol](configs/final_training_v1.json) records the approved settin
 python scripts/run_final_training.py verify
 ```
 
-Verification reloads the saved artifacts and uses only pre-test examples. The `fit` phase performs the single approved final-training experiment and refuses an existing destination; it is not a routine verification command. The `evaluate` phase fails closed. Activating independent testing requires separate approval and the remaining evaluation orchestration; Notebook 06 is not created.
+Verification reloads the saved artifacts and uses only pre-test examples. The `fit` phase performs the single approved final-training experiment and refuses an existing destination; it is not a routine verification command. The `evaluate` phase remains disabled by both a code-level release gate and the [evaluation configuration](configs/final_evaluation_v1.json). The complete evaluation loop, paired statistics and plotting interfaces are implemented; real test access still requires separate approval. Notebook 06 is not created.
 
 Final checkpoints, preprocessing and `source.zip` remain in `artifacts/final_training_v1/`, excluded from Git. Preserve this directory and the original snapshots for exact artifact reproduction. The source archive records the actual implementation used for fitting, including uncommitted code; the Git revision alone does not identify that implementation. Repeated inference is verified in the recorded environment; deterministic training settings do not guarantee bitwise agreement across different software or hardware.
+
+The `dry-run` phase exercises all frozen models, chronological observation updates, metrics and bootstrap calculations on the final 30 permitted pre-test sessions:
+
+```sh
+python scripts/run_final_training.py dry-run > /tmp/nit3251-pretest-check.json
+```
+
+This temporary record is a machinery check, not independent accuracy evidence: the models were fitted through the demonstrated period. It does not modify frozen artifacts or produce an evaluation directory. Reusable plotting functions in `market_forecasting.evaluation_plots` return figures without exporting files. The future authorised evaluation will preserve one `evaluation.json` record plus its evaluation-source archive in a separate, non-overwriting directory.
 
 ## Installation
 Python 3.12 is the verified environment; package metadata permits Python 3.11–3.12, but that does not establish verification on both versions. Run from the repository root:

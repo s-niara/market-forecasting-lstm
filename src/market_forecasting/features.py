@@ -49,15 +49,18 @@ def wilder_rsi(close, period=14):
     return result
 
 
-def calculate_features(series, config):
-    """Build aligned development-only indicators without filling unavailable history."""
+def calculate_features(series, config, *, history_end=None):
+    """Build causal indicators through an explicit historical boundary."""
+    end = config["validation_end"] if history_end is None else history_end
+    if history_end is not None:
+        end = _history_boundary(config, end, config["test_end"])
     closes = {}
     for ticker in ("NVDA", "SPY", "XLK"):
         s = series[ticker]
         if not isinstance(s.index, pd.DatetimeIndex) or s.index.has_duplicates or not s.index.is_monotonic_increasing:
             raise ValueError("Unique chronological session dates required")
-        # Exclude 2025 before any indicator or numerical validity calculation.
-        s = s.loc[config["start"]:config["validation_end"]].astype(float)
+        # Bound the prefix before conversion; the default remains development-only.
+        s = s.loc[config["start"]:end].astype(float)
         if not np.isfinite(s).all() or (s <= 0).any():
             raise ValueError("Missing, nonfinite or nonpositive development Close")
         closes[ticker] = s
@@ -237,10 +240,23 @@ def validate_feature_preprocessing(preprocessing, variant):
             raise ValueError(f"Frozen scaler for {name} must have a finite mean and positive finite scale")
 
 
-def prepare_origin_input(series, config, variant, origin, preprocessing):
+def _history_boundary(config, origin, permitted_end):
+    """Validate an explicit historical limit without changing dataset partitions."""
+    origin, limit = pd.Timestamp(origin), pd.Timestamp(permitted_end)
+    if any(pd.isna(date) or date.tz is not None or date != date.normalize()
+           for date in (origin, limit)):
+        raise ValueError("Historical boundaries must be timezone-naive daily dates")
+    if not pd.Timestamp(config["start"]) <= origin <= limit <= pd.Timestamp(config["test_end"]):
+        raise ValueError("Forecast origin exceeds the permitted historical boundary")
+    return origin
+
+
+def prepare_origin_input(series, config, variant, origin, preprocessing, *, permitted_end=None):
     """Transform a historical origin window without requiring its unknown target."""
     _validate_feature_configuration(config)
-    end = _pretest_boundary(config, origin)
+    # The caller must authorise evaluation before supplying a later explicit limit.
+    end = (_pretest_boundary(config, origin) if permitted_end is None
+           else _history_boundary(config, origin, permitted_end))
     validate_feature_preprocessing(preprocessing, variant)
     bounded = {}
     for ticker, calendar_name in (("NVDA", "NASDAQ"), ("SPY", "NYSE"), ("XLK", "NYSE")):
@@ -253,7 +269,7 @@ def prepare_origin_input(series, config, variant, origin, preprocessing):
             raise ValueError("Forecast origin must be an observed trading session")
         bounded[ticker] = prefix
     # Each call preserves the original indicator seeds by retaining the full prefix.
-    _, features = calculate_features(bounded, dict(config, validation_end=str(end.date())))
+    _, features = calculate_features(bounded, config, history_end=end)
     complete = np.isfinite(features[VARIANTS["C"]].to_numpy()).all(axis=1)
     if len(features) < 79 or complete[:49].any() or not complete[49:].all():
         raise ValueError("Insufficient continuous feature history for the 30-session origin window")

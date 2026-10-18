@@ -11,7 +11,7 @@ Last updated: 18 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 | 4. Baselines | Naive and ARIMA implemented | Recorded forecasts preserved; Notebook 02 metrics and alignment verified |
 | 5. Stock-only LSTM | Complete; 15/15 fits | 123 tests; 15-checkpoint inference, scaling and executed notebook verified |
 | 6. Controlled feature experiments | Complete; 9/9 fits | 132 tests; nine-checkpoint inference, feature arithmetic, common samples and executed notebook verified |
-| 7. Final training and independent evaluation | 7A complete: one ARIMA and 9/9 LSTM fits frozen; test evaluation reserved | 206 tests; independent reload, scaler/state integrity and pre-test inference verified |
+| 7. Final training and independent evaluation | 7A fits frozen; 7B evaluation infrastructure complete; test execution sealed | 241 tests; 30-session frozen-model dry run, paired bootstrap and eight plotting interfaces verified |
 | 8. Presentation and delivery | Not started; supporting notes exist | Delivery verification outstanding |
 
 ## 1. Repository foundation
@@ -172,7 +172,8 @@ Last updated: 18 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 - [x] Independently reload all saved artifacts and freeze their integrity manifest.
 - [x] Predeclare evaluation timing, metrics, contrasts, uncertainty settings and examples.
 - [ ] Obtain separate authorisation for independent testing.
-- [ ] Activate and verify test-stage orchestration and create Notebook 06 after approval.
+- [x] Implement and verify evaluation orchestration, paired statistics, uncertainty analysis and plotting interfaces.
+- [ ] Release the test-access gate and create Notebook 06 only after approval.
 - [ ] Evaluate the reserved 2025 period and document final errors and limitations.
 
 **Objective/deliverables:** reproducible final fits on 2015–2024, immutable model/preprocessing evidence, and an independently authorised 2025 evaluation.
@@ -185,7 +186,15 @@ Last updated: 18 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 **Freeze identity:** `e2a46cc211c393b197f67f275ea214dabc7fd67a74dae90401be9e5ec2bd88dc` is the SHA-256 of the final manifest. The manifest records its source revision plus hashes and an archive of the actual uncommitted implementation, rather than claiming that the Git revision alone captures the fit. Artifact checksums are validated before model loading. Existing final destinations cannot be overwritten or silently resumed.
 
-**Outstanding/limitations:** 2025 remains sealed. The pre-test inference interfaces are verified; the independent evaluation loop, bootstrap reporting and Notebook 06 remain to be activated/implemented after authorisation. The approved five-family hierarchy, seed reporting and B−A/C−B contrasts cannot be changed in response to test outcomes. Model A is the primary LSTM, and persistence remains the essential benchmark. Training on more recent history reduces model age but does not establish improved generalisation. The return-target alternative is deferred. Local snapshots and artifacts require preservation because they are excluded from Git.
+**Evaluation infrastructure, 19 October 2026:** the runner loads the pinned frozen manifest and verifies payload hashes before model loading. The training-source ZIP is checked against its recorded member hashes, while subsequent evaluation source/configuration hashes and Git revision are recorded separately. The evaluation loop persists all eleven forecasts before calling the single-session observation loader, then records errors, filters the observed NVDA price into ARIMA and appends aligned NVDA/SPY/XLK history. No weights, coefficients or scalers are refitted. Existing indicator arithmetic and default development boundaries are unchanged; explicit permitted-history limits support the future authorised evaluation without relabelling dataset partitions.
+
+**Statistics and presentation:** `evaluation.py` validates one complete target sequence, reuses the existing metric functions, calculates every seed's MAE/RMSE before family aggregation, and implements A−naive, ARIMA−naive, B−A and C−B. Positive naive-relative skill denotes improvement; negative paired differences favour the first model. Circular-block bootstrap uses 5,000 joint date resamples at lengths 10/5/20 with seed 314159 and approximate 95% percentile intervals. `evaluation_plots.py` supplies eight reusable figures, including shared seed-42 examples selected by the fixed first-target/three-largest-naive-error rule. No figures are automatically exported by these functions.
+
+**Pre-test verification:** 241 tests passed with 20 known Keras/NumPy serialization deprecation warnings. A real-checkpoint dry run issued 330 forecasts over 30 sessions from 2024-11-18 through 2024-12-31, beginning with origin 2024-11-15. Its 60 forecast/observation events followed the required order. This is a computation check using models fitted through that period, not holdout performance. Bootstrap intervals reproduced exactly with the fixed seed; all eight plotting functions rendered and were visually inspected using pre-test outputs. Synthetic tests independently verify seed-first RMSE, paired arithmetic, joint block resampling, zero-baseline handling, missing/nonfinite/misaligned data rejection, causal history, future perturbations, shared dates, durable forecast-before-quote recording and sealed command refusal. All 34 frozen final-training files and prior development evidence remain unchanged. No real test values, forecasts or figures were accessed or generated, and no additional model fitting occurred.
+
+**Evaluation files:** `configs/final_evaluation_v1.json`, `scripts/run_final_training.py`, `src/market_forecasting/evaluation.py`, `src/market_forecasting/evaluation_plots.py`, explicit bounded-history interfaces in `features.py` and `arima.py`, and `tests/test_evaluation.py`. Temporary dry-run records and plot previews are outside the repository; no final-evaluation artifact directory or Notebook 06 exists.
+
+**Outstanding/limitations:** 2025 remains sealed. The complete evaluation machinery is verified using permitted data; releasing the real test-access gate and creating Notebook 06 remain approval-dependent. The approved five-family hierarchy, seed reporting and B−A/C−B contrasts cannot be changed in response to test outcomes. Model A is the primary LSTM, and persistence remains the essential benchmark. Training on more recent history reduces model age but does not establish improved generalisation. The return-target alternative is deferred. Local snapshots and artifacts require preservation because they are excluded from Git.
 
 ## 8. Presentation and delivery
 

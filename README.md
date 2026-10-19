@@ -1,100 +1,154 @@
-# Market Forecasting with LSTM
+# Time Series Forecasting with LSTM and Feature Engineering
 
-An individual NIT3251 Advanced Data Science research project investigating next-session stock-price forecasting. NVIDIA (NVDA) is the initial case study; SPY and XLK are candidate market and sector context series.
+**Victoria University — NIT3251 Advanced Data Science, Assessment 2.**
 
-## Research objectives
-Compare a last-observed-price baseline and a traditional statistical model with LSTMs using stock history, technical features and market context. Evaluate whether additional inputs improve validation performance under a consistent forecast-origin protocol, followed by a reserved final test.
+This research evaluates next-trading-session NVIDIA (NVDA) closing-price forecasts using naïve persistence, ARIMA(2,1,2), and three residual LSTM variants:
 
-The target is Yahoo split-adjusted Close in USD. Volume features remain deferred pending verification of adjustment semantics. Price-only LSTM tuning and the nine-run controlled feature comparison are complete. See [data conventions](docs/DATA_CONVENTIONS.md).
+- **A — price-only:** NVIDIA Close (one feature; primary LSTM).
+- **B — technical indicators:** Close plus seven SMA, EMA, RSI and MACD-derived features (eight features).
+- **C — market context:** Model B plus SPY and XLK one-session log returns (ten features).
 
-## Current implementation
-Frozen data, calendar auditing, price-only development windows and the naive validation baseline are implemented. ARIMA and the residual price-only LSTM are implemented. Fifteen LSTM fits selected configuration C; its mean validation MAE is 1.705023 USD, compared with 1.689494 USD for the naive benchmark. The subsequent common-warm-up feature comparison found no average improvement over price-only LSTM or naive; see [Milestone 6](docs/MILESTONE_6.md). Independent 2025 evaluation is complete. ARIMA has the lowest observed errors, while none of the LSTM families improves on naïve mean MAE or RMSE; the primary uncertainty intervals include zero. [Notebook 06](notebooks/06_final_evaluation.ipynb) presents the final evidence and conclusions. See the [LSTM results](docs/MILESTONE_5.md). See [implementation and verification status](docs/PROGRESS.md), the [roadmap](docs/PLAN.md) and the [benchmark summary](docs/MILESTONE_4.md).
+The target is Yahoo's retrospectively split-adjusted **Close in USD**, not dividend-adjusted Adj Close. The study uses 30-session windows and chronological development training (2015–2022), validation (2023–2024), frozen final refitting (2015–2024) and independent testing (2025). During testing, LSTM weights/scalers and ARIMA coefficients remain fixed; observed prices update the information available for subsequent one-step forecasts.
 
-## Frozen final-training models
-The final specification uses naive persistence, ARIMA(2,1,2), primary price-only LSTM A, technical-indicator LSTM B and market-context LSTM C. One ARIMA and nine fresh LSTM fits were completed and frozen on 18 October 2026, using only 2015–2024 observations. All three LSTM variants share 2,437 fitting targets and fixed 19-epoch training. The separate authorised independent evaluation preserves these fitted models unchanged.
+## Principal findings
 
-The [final protocol](configs/final_training_v1.json) records the approved settings and future comparisons. The local [freeze manifest](artifacts/final_training_v1/manifest.json) binds model identities, configurations, scalers, source/data hashes, package versions and independently verified artifacts. See [final-stage progress](docs/PROGRESS.md#7-final-training-and-independent-evaluation) for verification evidence and limitations.
+The independent evaluation covers **250 sessions and 2,750 forecasts**. LSTM family values are means of three seed-specific metrics, not prediction ensembles.
 
-```sh
-python scripts/run_final_training.py verify
-```
+| Model | Test MAE (USD) | Test RMSE (USD) |
+|---|---:|---:|
+| Naïve persistence | 3.154681 | 4.290545 |
+| ARIMA(2,1,2) | **3.110051** | **4.239547** |
+| A — price-only LSTM | 3.187466 | 4.310978 |
+| B — technical indicators | 3.181817 | 4.325776 |
+| C — indicators + context | 3.179046 | 4.315488 |
 
-Verification reloads the saved artifacts and uses only pre-test examples. The `fit` phase performs the single approved final-training experiment and refuses an existing destination; it is not a routine verification command. Milestone 8A explicitly authorised both the code-level release gate and the [evaluation configuration](configs/final_evaluation_v1.json). The single independent evaluation is complete: 250 sessions and 2,750 forecasts, with full-precision evidence in [evaluation.json](artifacts/final_evaluation_v1/evaluation.json). The `evaluate` phase refuses the existing destination and must not be rerun to replace results. [Notebook 06](notebooks/06_final_evaluation.ipynb) verifies and interprets the saved results without repeating model inference or fitting.
+ARIMA achieved the lowest observed errors, with a 1.415% MAE improvement over naïve. No LSTM family outperformed naïve in mean MAE or RMSE. Feature effects were small and inconsistent across metrics, seeds and development/test periods. All four primary paired bootstrap intervals include zero; the results do not establish statistically reliable superiority or profitable trading. See [Notebook 06](notebooks/06_final_evaluation.ipynb) for the final interpretation.
 
-Final checkpoints, preprocessing and `source.zip` remain in `artifacts/final_training_v1/`, excluded from Git. Preserve this directory and the original snapshots for exact artifact reproduction. The source archive records the actual implementation used for fitting, including uncommitted code; the Git revision alone does not identify that implementation. Repeated inference is verified in the recorded environment; deterministic training settings do not guarantee bitwise agreement across different software or hardware.
+## Repository structure
 
-The `dry-run` phase exercises all frozen models, chronological observation updates, metrics and bootstrap calculations on the final 30 permitted pre-test sessions:
+| Path | Contents |
+|---|---|
+| `notebooks/` | Six executed research notebooks; analysis, demonstrations and conclusions |
+| `src/market_forecasting/` | Authoritative data, feature, model, preprocessing and evaluation functions |
+| `configs/` | Temporal boundaries, selected settings and frozen experiment protocols |
+| `scripts/` | Acquisition, checks and experiment orchestration |
+| `tests/` | Synthetic tests of calculations, alignment, causality and frozen inference |
+| `docs/` | Data conventions, methodological decisions and development-result summaries |
+| `data/raw/` | Three original Yahoo snapshots; **not tracked** |
+| `artifacts/` | Saved predictions, histories, models and final manifests; **not tracked** |
 
-```sh
-python scripts/run_final_training.py dry-run > /tmp/nit3251-pretest-check.json
-```
+## Data Availability and Reproducibility
 
-This temporary record is a machinery check, not independent accuracy evidence: the models were fitted through the demonstrated period. It does not modify frozen artifacts or produce an evaluation directory. Reusable plotting functions in `market_forecasting.evaluation_plots` return figures without exporting files. The authorised evaluation preserves one `evaluation.json` record, its exact evaluation-source archive and eight verified diagnostic figures in `artifacts/final_evaluation_v1/`. These local artifacts are excluded from Git and must be preserved alongside the frozen training artifacts.
+This repository contains the complete Python implementation, configurations,
+tests, research documentation, and six executed Jupyter notebooks.
+
+The project uses historical Yahoo Finance data for NVIDIA (NVDA), SPY, and XLK,
+covering January 2015 to December 2025. The original datasets and saved
+experiment artifacts are not included in the repository because redistribution
+permission has not been established.
+
+The executed notebooks can be inspected directly on GitHub. Re-executing the
+analyses and verifying the saved models requires access to the original
+datasets and experiment artifacts.
+
+### Required Datasets
+
+The research uses three frozen data snapshots:
+
+| Dataset | File |
+|---|---|
+| NVIDIA | `data/raw/NVDA_yahoo_snapshot.json` |
+| S&P 500 ETF | `data/raw/SPY_yahoo_snapshot.json` |
+| Technology Sector ETF | `data/raw/XLK_yahoo_snapshot.json` |
+
+Each snapshot contains 2,766 trading sessions, from 2 January 2015 to
+31 December 2025.
+
+Dataset specifications, original checksums, and preprocessing conventions are
+documented in [Data Conventions](docs/DATA_CONVENTIONS.md) and
+[Data Verification](docs/data_verification.json).
+
+### Saved Experiment Artifacts
+
+The original experiments produced saved predictions, training histories,
+model checkpoints, evaluation results, and verification records.
+
+These are organised under the following directories:
+
+- `artifacts/naive_v1/`
+- `artifacts/arima_v1/`
+- `artifacts/lstm_v1/`
+- `artifacts/features_v1/`
+- `artifacts/final_training_v1/`
+- `artifacts/final_evaluation_v1/`
+
+These artifacts are excluded from GitHub. When available through an authorised
+access arrangement, they must be restored to their original directory
+locations to reproduce the recorded results.
+
+The final evaluation notebook uses saved forecasts rather than generating
+new test predictions. Full artifact verification additionally requires the
+original development records and frozen model files.
+
+The installation, notebook execution, and integrity-check instructions are
+provided below.
 
 ## Installation
-Python 3.12 is the verified environment; package metadata permits Python 3.11–3.12, but that does not establish verification on both versions. Run from the repository root:
+
+The recorded environment is **Python 3.12.14 on macOS ARM64**. The full lockfile was installed in a clean Python 3.12 environment during submission verification. Other platforms are unverified; the lock includes platform-specific packages such as `appnope`. Python metadata allowing 3.11–3.12 is not evidence of verification on every version.
+
+From the repository root:
 
 ```sh
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-lstm-lock.txt
-python -m pip install -e .
+python -m pip install --no-deps --no-build-isolation -e .
 python -m pip check
+python -m pytest -q
 ```
 
-The milestone lockfile records the current verified development dependencies. `requirements-foundation-lock.txt` preserves the earlier foundation environment. The current environment includes statsmodels 0.15.0, TensorFlow 2.21.0 and Keras 3.15.1. Dashboard dependencies remain deferred. Earlier milestone lockfiles are preserved.
+The lock includes TensorFlow 2.21.0, Keras 3.15.1, statsmodels 0.15.0 and the Jupyter dependencies. Earlier milestone lockfiles document historical environments; do not install all four together. No API keys, credentials or custom environment variables are required to inspect saved evidence or run the tests.
 
-## Data prerequisites and reproducibility
-Exact reproduction requires the original local Yahoo JSON snapshots under `data/raw/`. These files are excluded from Git. [The acquisition record](docs/data_verification.json) contains retrieval metadata and checksums for NVDA, SPY and XLK: 2,766 observations each, retrieved on 11 October 2026 for 2015–2025.
+## Running the notebooks
 
-A new clone alone cannot reproduce the recorded numerical results without those snapshots. A later vendor download may contain revised history and must be treated as a new dataset version. The acquisition script documents the original procedure, but currently writes a fixed audit path; do not rerun it against preserved evidence. A refresh requires separately versioned data and audit destinations. Data access does not confer redistribution rights; permitted submission and sharing arrangements remain to be established.
-
-With the original snapshots available:
+After supplying the authorised prerequisites:
 
 ```sh
 python scripts/check_snapshot.py
-python -m pytest -q
+python -m ipykernel install --user --name nit3251 --display-name "NIT3251 (Python 3.12)"
 jupyter lab
 ```
 
-Notebooks are the primary research narrative and demonstration interface; reusable Python modules implement data processing, features, models and evaluation. Each notebook calls the actual implementation, examines its behaviour and uses evidence to assess whether changes are warranted. Keep one authoritative notebook per stage; do not duplicate production algorithms or generate separate executed notebook copies.
+Select the **NIT3251 (Python 3.12)** kernel. Start Jupyter from the repository root and run notebooks in this order; their path discovery also supports the `notebooks/` directory.
 
-Run [notebook 01](notebooks/01_data_understanding.ipynb) for training-period EDA and data-quality assessment. Its outputs remain inline in that notebook, and its loader decodes only training-period price values. [Notebook 02](notebooks/02_dataset_and_naive_baseline.ipynb) covers development windows and validation metrics. Existing historical experiment artifacts remain preserved.
+| Notebook | Additional local inputs | Execution behaviour |
+|---|---|---|
+| [01 — Data understanding](notebooks/01_data_understanding.ipynb) | All three snapshots | Training-period EDA and quality checks |
+| [02 — Dataset and naïve](notebooks/02_dataset_and_naive_baseline.ipynb) | NVDA; naïve summary, metadata and predictions | Reconstructs windows and baseline in memory |
+| [03 — ARIMA](notebooks/03_arima_benchmark.ipynb) | NVDA; ARIMA and naïve records | **Refits the selected development ARIMA** and replays development forecasts; no new order search |
+| [04 — LSTM](notebooks/04_lstm_experiments.ipynb) | NVDA; all `lstm_v1` runs; baseline records | Loads all 15 checkpoints and verifies development predictions; no training |
+| [05 — Features](notebooks/05_feature_experiments.ipynb) | All snapshots; `features_v1`; baseline records; Milestone 5 seed-42 final summary | Verifies features and nine saved checkpoints; no training |
+| [06 — Final evaluation](notebooks/06_final_evaluation.ipynb) | All final-training files; final evaluation JSON/source archive | Recalculates metrics and recorded uncertainty from saved forecasts; no new test forecasts |
 
-The calendar script displays a training-only, timestamp-only audit without writing a report. The preserved historical calendar record remains unchanged. Baseline scripts write fixed, version-labelled destinations and refuse to overwrite them. Notebook 02 recomputes baseline results in memory. See the [benchmark reproduction notes](docs/MILESTONE_4.md) before running artifact-producing scripts.
+For inspection **without any refitting**, read Notebook 03's existing executed output rather than running all its cells. No notebook requires a machine-specific absolute path. Floating-point agreement across hardware/software is subject to the recorded tolerances; deterministic settings do not guarantee bit-identical retraining.
 
-## Repository structure
-| Path | Responsibility |
-|---|---|
-| `configs/` | Forecast configuration and temporal boundaries |
-| `src/market_forecasting/` | Reusable loading, validation, calendar and dataset logic |
-| `scripts/` | Acquisition, integrity checks and experiment artifact generation |
-| `notebooks/` | Primary research narrative, implementation demonstrations and critical analysis |
-| `tests/` | Automated data-integrity, alignment and evaluation checks |
-| `docs/` | Roadmap, progress, decisions, conventions and technical evidence |
-| `data/` | Local vendor data, excluded from Git |
-| `artifacts/` | Generated outputs, excluded from Git |
+## Integrity checks and rebuilding
 
-## Supporting documentation
-- [Roadmap and completion criteria](docs/PLAN.md)
-- [Progress and verification](docs/PROGRESS.md)
-- [Research and engineering decisions](docs/DECISIONS.md)
-- [Data conventions and limitations](docs/DATA_CONVENTIONS.md)
-- [Milestone 2: environment and audit](docs/MILESTONE_2.md)
-- [Milestone 3: dataset construction](docs/MILESTONE_3.md)
-- [Milestone 4: forecasting benchmarks](docs/MILESTONE_4.md)
-- [Milestone 5: residual LSTM experiments and reproduction](docs/MILESTONE_5.md)
-- [Milestone 6: controlled feature experiments](docs/MILESTONE_6.md)
-- [Notebook 06: independent evaluation and research conclusions](notebooks/06_final_evaluation.ipynb)
-- [Notebook 05: feature analysis and comparisons](notebooks/05_feature_experiments.ipynb)
-- [Notebook 04: saved LSTM experiment analysis](notebooks/04_lstm_experiments.ipynb)
+With the complete authorised evidence present:
 
-A Streamlit/Plotly demonstration, final report and assessment defence are planned after the forecasting experiments. The demonstration will present saved results; live trading and profitability claims are outside scope.
+```sh
+python scripts/check_snapshot.py
+python scripts/run_final_training.py verify
+```
 
-## Statistical benchmark and feature experiments
-See [Milestone 4](docs/MILESTONE_4.md) for the ARIMA protocol, executed comparison and reproduction command. [Notebook 03](notebooks/03_arima_benchmark.ipynb) displays saved forecasts. Technical feature engineering remains central: SMA, EMA, RSI and MACD candidates and three controlled LSTM variants are documented in the [proposal](docs/FEATURE_EXPERIMENT_PROPOSAL.md), now implemented and evaluated in [Milestone 6](docs/MILESTONE_6.md).
+`verify` reloads final models, checks scalers and hashes, and performs pre-test inference checks without fitting or repeating the independent evaluation. Its manifest protects exact versions of selected documentation and locked notebooks as well as artifacts. A mismatch must be investigated, not bypassed by editing hashes. The original training/evaluation `source.zip` archives capture the implementation actually executed; Git revision identifiers alone are insufficient provenance.
 
-## Code documentation standard
-Python modules and functions generally use one-sentence docstrings; a second sentence is added only when needed to clarify a non-obvious contract. Repetitive Parameters, Returns, Raises and Notes sections are avoided. Concise comments beside the implementation explain methodological safeguards, important shapes, transformations and non-obvious calculations. Comments explain why an operation is needed without narrating obvious statements or claiming unimplemented capabilities.
+Inspect results through the notebooks and saved JSON first. Rebuilding experiments is a **separate, explicitly planned operation in an isolated working copy**, with new output/provenance destinations and the original evidence preserved. The existing entry points are `build_naive_baseline.py`, `run_arima_benchmark.py`, `run_lstm_experiments.py` (`selection`, then `final`) and `run_feature_experiments.py`. Their configurations and reproduction details are documented in [Milestone 4](docs/MILESTONE_4.md), [Milestone 5](docs/MILESTONE_5.md) and [Milestone 6](docs/MILESTONE_6.md). Several runners/reporters use fixed destinations or write documentation; they are not read-only verification commands. A new final fit creates new artifact identities and must not replace the frozen manifest. Do not rerun `run_final_training.py evaluate` to recreate or overwrite the completed 2025 evaluation.
 
-This standard applies to subsequent milestones, including scaling, model construction, optimiser settings, seed handling, checkpoint restoration, inverse transformation and evaluation. Reusable logic remains in Python modules; notebooks demonstrate and interpret experiments. Documentation changes are verified without unrelated refactoring. See the [Milestone 5 design](docs/MILESTONE_5_DESIGN.md) for the bounded LSTM protocol.
+## Supporting methodology
+
+- [Data definitions and temporal boundaries](docs/DATA_CONVENTIONS.md)
+- [Research decisions](docs/DECISIONS.md)
+- [Progress and verification evidence](docs/PROGRESS.md)
+- [Research roadmap](docs/PLAN.md)

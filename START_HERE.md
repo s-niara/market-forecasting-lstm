@@ -7,3 +7,5 @@
 5. Follow the [roadmap](docs/PLAN.md) for subsequent development.
 
 6. Inspect [notebook 04](notebooks/04_lstm_experiments.ipynb) and the [LSTM summary](docs/MILESTONE_5.md) for the completed 15-run experiment. The notebook reads saved evidence without training.
+
+7. Use [notebook 05](notebooks/05_feature_experiments.ipynb) for technical-indicator visualisations and the controlled A/B/C comparison; consult [Milestone 6](docs/MILESTONE_6.md) for results and limitations.

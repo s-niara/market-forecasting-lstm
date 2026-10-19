@@ -1,6 +1,6 @@
 # Project progress
 
-Last updated: 18 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Implementation and verification are tracked separately.
+Last updated: 19 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Implementation and verification are tracked separately.
 
 ## Status overview
 | Milestone | Implementation | Verification |
@@ -11,7 +11,7 @@ Last updated: 18 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 | 4. Baselines | Naive and ARIMA implemented | Recorded forecasts preserved; Notebook 02 metrics and alignment verified |
 | 5. Stock-only LSTM | Complete; 15/15 fits | 123 tests; 15-checkpoint inference, scaling and executed notebook verified |
 | 6. Controlled feature experiments | Complete; 9/9 fits | 132 tests; nine-checkpoint inference, feature arithmetic, common samples and executed notebook verified |
-| 7. Final training and independent evaluation | 7A fits frozen; 7B evaluation infrastructure complete; test execution sealed | 241 tests; 30-session frozen-model dry run, paired bootstrap and eight plotting interfaces verified |
+| 7. Final training and independent evaluation | Final fits frozen; independent evaluation and Notebook 06 complete | 250 sessions and 2,750 forecasts verified; Notebook 06 executes from saved evidence; 40 evaluation tests pass |
 | 8. Presentation and delivery | Not started; supporting notes exist | Delivery verification outstanding |
 
 ## 1. Repository foundation
@@ -174,7 +174,8 @@ Last updated: 18 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 - [x] Obtain separate authorisation for independent testing.
 - [x] Implement and verify evaluation orchestration, paired statistics, uncertainty analysis and plotting interfaces.
 - [x] Release both test-access controls for the authorised independent evaluation.
-- [ ] Obtain approval of the recorded results before creating Notebook 06.
+- [x] Authorise Notebook 06 using the committed independent evaluation evidence.
+- [x] Present verified final results, uncertainty and research conclusions in Notebook 06.
 - [x] Evaluate the reserved 2025 period and document final errors and limitations.
 
 **Objective/deliverables:** reproducible final fits on 2015–2024, immutable model/preprocessing evidence, and an independently authorised 2025 evaluation.
@@ -193,7 +194,7 @@ Last updated: 18 October 2026. Milestone numbers follow [PLAN.md](PLAN.md). Impl
 
 **Pre-test verification:** 241 tests passed with 20 known Keras/NumPy serialization deprecation warnings. A real-checkpoint dry run issued 330 forecasts over 30 sessions from 2024-11-18 through 2024-12-31, beginning with origin 2024-11-15. Its 60 forecast/observation events followed the required order. This is a computation check using models fitted through that period, not holdout performance. Bootstrap intervals reproduced exactly with the fixed seed; all eight plotting functions rendered and were visually inspected using pre-test outputs. Synthetic tests independently verify seed-first RMSE, paired arithmetic, joint block resampling, zero-baseline handling, missing/nonfinite/misaligned data rejection, causal history, future perturbations, shared dates, durable forecast-before-quote recording and sealed command refusal. All 34 frozen final-training files and prior development evidence remain unchanged. No real test values, forecasts or figures were accessed or generated, and no additional model fitting occurred.
 
-**Evaluation files:** `configs/final_evaluation_v1.json`, `scripts/run_final_training.py`, `src/market_forecasting/evaluation.py`, `src/market_forecasting/evaluation_plots.py`, explicit bounded-history interfaces in `features.py` and `arima.py`, and `tests/test_evaluation.py`. Temporary pre-test dry-run records and plot previews are outside the repository. Authorised independent evaluation evidence is stored separately from frozen training artifacts; Notebook 06 requires a further approval.
+**Evaluation files:** `configs/final_evaluation_v1.json`, `scripts/run_final_training.py`, `src/market_forecasting/evaluation.py`, `src/market_forecasting/evaluation_plots.py`, explicit bounded-history interfaces in `features.py` and `arima.py`, and `tests/test_evaluation.py`. Temporary pre-test dry-run records and plot previews are outside the repository. Authorised independent evaluation evidence is stored separately from frozen training artifacts; [Notebook 06](../notebooks/06_final_evaluation.ipynb) presents the saved independent evidence without model inference or additional fitting.
 
 **Independent evaluation (Milestone 8A), 19 October 2026:** explicit authorisation enabled both the code-level gate and the evaluation configuration flag. The committed pre-test revision is `dc56f099342218a64b87439bb98c3f6a110d1326`; the separate evaluation source archive captures the authorised release settings, absolute-error output fields, execution timestamps and isolated gate tests. The scientific protocol and numerical forecasting/statistical algorithms are unchanged. Before release, 241 tests passed, all 34 frozen files and the original source archive matched their hashes, all nine LSTM checkpoints reloaded exactly, ARIMA state restored, and snapshot checksums matched. The release-specific checks passed 246 tests before any real test quote was decoded.
 
@@ -213,7 +214,9 @@ LSTM family values are arithmetic means of three seed-specific metrics; the full
 
 **Evidence and verification:** [evaluation.json](../artifacts/final_evaluation_v1/evaluation.json) contains authorisation, execution times, source/model/data identities, all forecasts and observed closes, signed/absolute errors, metrics, paired contrasts, bootstrap results and completion checks. [source.zip](../artifacts/final_evaluation_v1/source.zip) preserves the exact evaluation implementation. Eight existing plotting functions produce numerically checked and visually inspected figures in the same directory, using seed 42 for representative plots and the first target plus the three largest naïve-error dates for shared examples. Saved metrics reproduce exactly; an independent block-resampling calculation agrees within 1e-12 USD. All 34 frozen files, development artifacts, snapshots, locked notebooks and unrelated housekeeping files remain unchanged. Post-evaluation verification passes 246 tests with 20 known Keras/NumPy deprecation warnings. No evaluation rerun, model refit, additional model selection or new notebook is included.
 
-**Outstanding/limitations:** the independent results are recorded and await review before Notebook 06. One test year and three fixed seeds limit generalisation. Grouped feature comparisons cannot identify individual indicator importance; input dimensionality also changes parameter counts. The original development experiments remain distinct from the final pre-test refits. Neither outcome permits performance-driven changes to the approved methodology. The return-target alternative remains deferred. Local snapshots, checkpoints and evaluation evidence require separate preservation because they are excluded from Git.
+**Final research notebook:** [Notebook 06](../notebooks/06_final_evaluation.ipynb) contains seven sections, ten code cells, three inline figures and three compact results tables. A fresh kernel reproduces recorded family metrics, seed aggregation, the four prespecified contrasts and all saved bootstrap intervals from the existing evaluation functions. It verifies all 250 dates, 2,750 forecasts, predefined examples and frozen provenance. Forty existing evaluation tests pass. The discussion distinguishes observed rankings from uncertainty, preserves Model A as the primary LSTM, and limits feature conclusions to grouped effects. No final artifacts, source modules, configurations or locked notebooks change.
+
+**Outstanding/limitations:** Notebook 06 awaits review before presentation development. One test year and three fixed seeds limit generalisation. Grouped feature comparisons cannot identify individual indicator importance; input dimensionality also changes parameter counts. The original development experiments remain distinct from the final pre-test refits. Neither outcome permits performance-driven changes to the approved methodology. The return-target alternative remains deferred. Local snapshots, checkpoints and evaluation evidence require separate preservation because they are excluded from Git.
 
 ## 8. Presentation and delivery
 
